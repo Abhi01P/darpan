@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
 
 export async function loginAction(email: string, password: string, callbackUrl?: string) {
     const supabase = await createClient()
