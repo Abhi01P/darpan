@@ -85,7 +85,7 @@ export default function RegisterUser() {
       <div>
          <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
-            <p className="text-muted-foreground mt-1">Join dhambooking.com and start your seamless adventures</p>
+            <p className="text-muted-foreground mt-1">Enjoy our mulidimensional virtual try-on and much more...</p>
          </div>
 
          <form onSubmit={handleSubmit}>
