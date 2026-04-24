@@ -1,0 +1,733 @@
+"use client";
+import { useState } from "react";
+
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #b8a8b0;
+  --surface:    #c4b4bc;
+  --nav-bg:     #2a1f28;
+  --sidebar-bg: #1e1620;
+  --card-bg:    #d8ccd4;
+  --text:       #1a1018;
+  --text-inv:   #e8dce0;
+  --muted:      #6a5860;
+  --pink-nav:   #e8a0b0;
+  --border:     rgba(255,255,255,0.12);
+  --radius:     4px;
+}
+
+.dw-root {
+  font-family: 'Jost', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+/* TOP NAV */
+.dw-topnav {
+  background: var(--nav-bg);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 44px; flex-shrink: 0;
+  position: sticky; top: 0; z-index: 200;
+}
+.dw-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px; font-weight: 600; letter-spacing: 3px;
+  color: var(--text-inv); text-transform: uppercase; cursor: pointer; user-select: none;
+}
+.dw-nav-links { display: flex; align-items: center; }
+.dw-nav-link {
+  font-size: 10px; font-weight: 500; letter-spacing: 1.2px;
+  text-transform: uppercase; color: rgba(232,220,224,0.55);
+  padding: 0 14px; height: 44px; display: flex; align-items: center;
+  cursor: pointer; transition: color .2s; border-bottom: 2px solid transparent; user-select: none;
+}
+.dw-nav-link:hover { color: var(--text-inv); }
+.dw-nav-link.active { color: var(--pink-nav); border-bottom-color: var(--pink-nav); }
+.dw-nav-icons { display: flex; align-items: center; gap: 14px; color: rgba(232,220,224,0.6); }
+.dw-nav-icon {
+  cursor: pointer; transition: color .2s; display: flex; align-items: center; position: relative;
+}
+.dw-nav-icon:hover { color: var(--text-inv); }
+.dw-nav-icon svg { width: 16px; height: 16px; }
+.dw-badge {
+  position: absolute; top: -6px; right: -6px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--pink-nav); color: var(--nav-bg);
+  font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+/* BODY */
+.dw-body { display: grid; grid-template-columns: 160px 1fr; flex: 1; min-height: 0; }
+
+/* SIDEBAR */
+.dw-sidebar {
+  background: var(--sidebar-bg); padding: 20px 0;
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
+  position: sticky; top: 44px; height: calc(100vh - 44px); overflow-y: auto;
+}
+.dw-sidebar-logo {
+  font-family: 'Cormorant Garamond', serif; font-size: 13px; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--text-inv); padding: 0 18px 4px; cursor: pointer;
+}
+.dw-sidebar-tagline {
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+  color: rgba(232,220,224,0.28); padding: 0 18px 18px;
+}
+.dw-sidebar-section {
+  padding: 10px 18px 4px; font-size: 7.5px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: rgba(232,220,224,0.28); font-weight: 600;
+}
+.dw-sidebar-item {
+  display: flex; align-items: center; gap: 8px; padding: 7px 18px;
+  font-size: 10.5px; letter-spacing: .8px; text-transform: uppercase;
+  color: rgba(232,220,224,0.45); cursor: pointer; transition: color .15s, background .15s; user-select: none;
+}
+.dw-sidebar-item:hover { color: var(--text-inv); background: rgba(255,255,255,.04); }
+.dw-sidebar-item.active {
+  color: var(--text-inv); background: rgba(255,255,255,.06);
+  border-left: 2px solid var(--pink-nav); padding-left: 16px;
+}
+.dw-sidebar-item svg { width: 11px; height: 11px; flex-shrink: 0; opacity: .7; }
+.dw-sidebar-divider { height: 1px; background: var(--border); margin: 12px 18px; }
+
+/* MAIN */
+.dw-main { padding: 32px 36px; overflow-y: auto; }
+
+/* CONTENT HEADER */
+.dw-content-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 24px; gap: 20px;
+}
+.dw-section-eyebrow {
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+}
+.dw-section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(26px, 3.5vw, 36px); font-weight: 600;
+  color: var(--text); line-height: 1.05; margin-bottom: 12px; letter-spacing: -0.5px;
+}
+.dw-section-desc { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.7; max-width: 340px; }
+.dw-header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; padding-top: 8px; }
+.dw-filter-btn {
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); background: transparent;
+  border: 1px solid rgba(0,0,0,0.18); border-radius: var(--radius);
+  padding: 5px 12px; cursor: pointer; font-family: 'Jost', sans-serif;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.dw-filter-btn:hover { border-color: var(--text); color: var(--text); }
+.dw-filter-btn.active { background: var(--text); color: var(--text-inv); border-color: var(--text); }
+
+/* GRID */
+.dw-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+/* CARD */
+.dw-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  overflow: hidden; cursor: pointer; position: relative;
+  transition: transform .22s, box-shadow .22s; animation: card-in .45s both;
+}
+.dw-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.22); }
+@keyframes card-in { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.dw-card:nth-child(1){animation-delay:.04s} .dw-card:nth-child(2){animation-delay:.09s}
+.dw-card:nth-child(3){animation-delay:.14s} .dw-card:nth-child(4){animation-delay:.18s}
+.dw-card:nth-child(5){animation-delay:.23s} .dw-card:nth-child(6){animation-delay:.28s}
+.dw-card-img-wrap {
+  width: 100%; aspect-ratio: 3/4; overflow: hidden; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.dw-card-img-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+.dw-card-tag {
+  position:absolute; top:10px; left:10px; font-size:7.5px;
+  letter-spacing:1.2px; text-transform:uppercase; font-weight:600;
+  background:rgba(26,16,24,.72); color:var(--text-inv); padding:3px 8px; border-radius:2px;
+}
+.dw-card-wishlist {
+  position:absolute; top:10px; right:10px; width:28px; height:28px; border-radius:50%;
+  background:rgba(255,255,255,.7); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; opacity:0; transition:opacity .2s, background .15s;
+}
+.dw-card:hover .dw-card-wishlist { opacity:1; }
+.dw-card-wishlist:hover { background:rgba(255,255,255,.92); }
+.dw-card-wishlist svg { width:13px; height:13px; color:#8a4060; }
+.dw-card-wishlist.liked svg { fill:#e84070; color:#e84070; }
+.dw-card-info { padding:10px 12px 12px; }
+.dw-card-meta { font-size:7.5px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+.dw-card-name { font-family:'Cormorant Garamond',serif; font-size:14px; font-weight:600; color:var(--text); line-height:1.3; }
+
+/* DETAIL VIEW */
+.dw-detail { display:grid; grid-template-columns:1fr 1fr; gap:40px; animation:card-in .35s both; }
+.dw-detail-img {
+  aspect-ratio:3/4; border-radius:8px; overflow:hidden;
+  display:flex; align-items:center; justify-content:center; font-size:96px;
+}
+.dw-detail-right { padding-top:8px; display:flex; flex-direction:column; gap:16px; }
+.dw-detail-tag { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+.dw-detail-name { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:600; color:var(--text); line-height:1.1; }
+.dw-detail-price { font-size:20px; font-weight:500; color:var(--text); }
+.dw-detail-desc { font-size:13px; font-weight:300; color:var(--muted); line-height:1.75; }
+.dw-detail-divider { height:1px; background:rgba(0,0,0,.10); }
+.dw-size-label { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+.dw-sizes { display:flex; gap:8px; flex-wrap:wrap; }
+.dw-size-btn {
+  width:38px; height:38px; border-radius:var(--radius);
+  border:1px solid rgba(0,0,0,.18); background:transparent;
+  font-family:'Jost',sans-serif; font-size:11px; font-weight:500;
+  cursor:pointer; transition:all .15s; color:var(--text);
+}
+.dw-size-btn:hover,.dw-size-btn.active { background:var(--text); color:var(--text-inv); border-color:var(--text); }
+.dw-detail-actions { display:flex; gap:10px; }
+.dw-btn-primary {
+  flex:1; padding:13px; background:var(--nav-bg); color:var(--text-inv);
+  border:none; border-radius:var(--radius); font-family:'Jost',sans-serif;
+  font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase;
+  cursor:pointer; transition:background .15s;
+}
+.dw-btn-primary:hover { background:#3d2c3a; }
+.dw-btn-secondary {
+  padding:13px 16px; background:transparent; color:var(--text);
+  border:1px solid rgba(0,0,0,.2); border-radius:var(--radius);
+  font-family:'Jost',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all .15s;
+}
+.dw-btn-secondary:hover { background:rgba(0,0,0,.06); }
+.dw-btn-back {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:10px; letter-spacing:1px; text-transform:uppercase;
+  color:var(--muted); cursor:pointer; margin-bottom:20px;
+  transition:color .15s; border:none; background:transparent;
+  font-family:'Jost',sans-serif;
+}
+.dw-btn-back:hover { color:var(--text); }
+.dw-btn-back svg { width:14px; height:14px; }
+
+/* TRY-ON PAGE */
+.dw-page-center { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; gap:18px; text-align:center; }
+.dw-page-eyebrow { display:inline-block; background:var(--pink-nav); color:var(--nav-bg); font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; padding:5px 14px; border-radius:20px; }
+.dw-page-big { font-family:'Cormorant Garamond',serif; font-size:46px; font-weight:300; font-style:italic; color:var(--text); }
+.dw-page-sub { font-size:12px; color:var(--muted); max-width:280px; line-height:1.7; }
+
+/* FIND PAGE */
+.dw-find-wrap { display:flex; flex-direction:column; gap:20px; }
+.dw-search-bar {
+  display:flex; align-items:center; gap:12px;
+  background:rgba(255,255,255,.55); border-radius:var(--radius); padding:12px 16px;
+}
+.dw-search-bar svg { width:16px; height:16px; color:var(--muted); flex-shrink:0; }
+.dw-search-input {
+  flex:1; background:transparent; border:none; outline:none;
+  font-family:'Jost',sans-serif; font-size:13px; color:var(--text);
+}
+.dw-search-input::placeholder { color:var(--muted); }
+.dw-tag-chips { display:flex; gap:10px; flex-wrap:wrap; }
+
+/* SIDE PANEL */
+.dw-panel-overlay {
+  position:fixed; inset:0; background:rgba(18,10,16,.45); z-index:300; animation:fade-in .2s;
+}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+.dw-panel {
+  position:fixed; top:0; right:0; bottom:0; width:320px;
+  background:var(--sidebar-bg); z-index:400; display:flex; flex-direction:column;
+  box-shadow:-8px 0 40px rgba(0,0,0,.35); animation:slide-in .25s cubic-bezier(.3,0,.2,1);
+}
+@keyframes slide-in{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.dw-panel-header {
+  padding:18px 20px 14px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.dw-panel-title { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:600; color:var(--text-inv); }
+.dw-panel-close {
+  width:30px; height:30px; border-radius:50%;
+  background:rgba(255,255,255,.08); border:none; color:var(--text-inv);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px;
+}
+.dw-panel-close:hover { background:rgba(255,255,255,.15); }
+.dw-panel-body { flex:1; overflow-y:auto; padding:14px 20px; display:flex; flex-direction:column; gap:10px; }
+.dw-panel-empty { text-align:center; color:rgba(232,220,224,.28); font-family:'Cormorant Garamond',serif; font-style:italic; font-size:16px; margin-top:40px; }
+.dw-panel-item {
+  display:flex; gap:12px; align-items:center;
+  background:rgba(255,255,255,.05); border-radius:var(--radius); padding:10px;
+}
+.dw-panel-item-img {
+  width:48px; height:58px; border-radius:3px; overflow:hidden;
+  display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;
+}
+.dw-panel-item-info { flex:1; }
+.dw-panel-item-name { font-family:'Cormorant Garamond',serif; font-size:13px; color:var(--text-inv); font-weight:600; }
+.dw-panel-item-sub { font-size:8.5px; letter-spacing:.8px; text-transform:uppercase; color:rgba(232,220,224,.35); margin-top:2px; }
+.dw-panel-item-remove { font-size:14px; color:rgba(232,220,224,.3); cursor:pointer; padding:4px; transition:color .15s; }
+.dw-panel-item-remove:hover { color:#e84070; }
+.dw-panel-footer { padding:14px 20px; border-top:1px solid var(--border); }
+.dw-panel-total { display:flex; justify-content:space-between; font-size:11px; color:rgba(232,220,224,.45); margin-bottom:12px; }
+.dw-panel-cta {
+  width:100%; padding:12px; background:linear-gradient(135deg,#e8a0b0,#c86080);
+  border:none; border-radius:var(--radius); color:#fff;
+  font-family:'Jost',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:1.2px; text-transform:uppercase; cursor:pointer; transition:opacity .15s;
+}
+.dw-panel-cta:hover { opacity:.88; }
+
+/* TOAST */
+.dw-toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  background:var(--nav-bg); color:var(--text-inv);
+  font-size:12px; font-weight:500; letter-spacing:.4px;
+  padding:10px 22px; border-radius:20px;
+  box-shadow:0 4px 24px rgba(0,0,0,.3); z-index:500; white-space:nowrap;
+  animation:toast-pop .3s cubic-bezier(.3,0,.2,1);
+}
+@keyframes toast-pop{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* FOOTER */
+.dw-footer {
+  background:var(--sidebar-bg); border-top:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 24px; flex-shrink:0;
+}
+.dw-footer-left { font-size:9px; letter-spacing:.8px; text-transform:uppercase; color:rgba(232,220,224,0.28); }
+.dw-footer-links { display:flex; gap:20px; }
+.dw-footer-link { font-size:9px; letter-spacing:.8px; text-transform:uppercase; color:rgba(232,220,224,0.35); cursor:pointer; transition:color .15s; }
+.dw-footer-link:hover { color:var(--text-inv); }
+
+@media(max-width:680px){
+  .dw-body{grid-template-columns:1fr}
+  .dw-sidebar{display:none}
+  .dw-grid{grid-template-columns:repeat(2,1fr)}
+  .dw-detail{grid-template-columns:1fr}
+}
+`;
+
+* ─── PRODUCTS DATA ──────────────────────────────────────────── */
+const PRODUCTS = [
+  { id:1, tag:"TOPS",      name:"Sculpted Silk Tunic",      color:"#7a9090", emoji:"👔", price:"₹4,800", sizes:["XS","S","M","L"],         desc:"A fluid silk tunic cut with architectural precision. The sculptural drape frames the torso with effortless grace, blending structure and softness." },
+  { id:2, tag:"BOTTOMS",   name:"Raw Indigo Straight Cut",   color:"#2c3a50", emoji:"👖", price:"₹3,200", sizes:["28","30","32","34","36"],  desc:"Selvedge denim washed in raw indigo. The straight cut sits cleanly on the hip and falls with a confident, unfussy line." },
+  { id:3, tag:"BOTTOMS",   name:"Canvas Pleat Trouser",      color:"#8a7860", emoji:"👖", price:"₹2,950", sizes:["S","M","L","XL"],          desc:"High-rise pleated trousers in medium-weight canvas. Italian-inspired silhouette with a tapered leg and deep side pockets." },
+  { id:4, tag:"OUTERWEAR", name:"Structure Coat No. 04",     color:"#8c2828", emoji:"🧥", price:"₹9,600", sizes:["XS","S","M","L","XL"],     desc:"A structured double-breasted coat in cardinal wool. The fourth in our annual coat series — bolder cut, wider lapels." },
+  { id:5, tag:"TOPS",      name:"Atelier Cotton Tee",        color:"#c8c0b8", emoji:"👕", price:"₹1,400", sizes:["XS","S","M","L","XL","XXL"], desc:"Foundation-weight Supima cotton in a classic box silhouette. The invisible backbone of every capsule wardrobe." },
+  { id:6, tag:"OUTERWEAR", name:"Plane Sweatshirt",          color:"#6a6058", emoji:"🧥", price:"₹3,600", sizes:["S","M","L","XL"],          desc:"Heavyweight French terry in tonal mushroom. Garment-dyed for a lived-in finish that only improves with time." },
+];
+
+const SIDEBAR_CATS = ["All","Tops","Bottoms","Outerwear","Accessories"];
+const FILTERS      = ["All","Curated","New","Saved"];
+const NAV_PAGES    = ["Wardrobe","Try-On","Find"];
+
+/* ─── SVG ICONS ──────────────────────────────────────────────── */
+const Ico = ({ n }) => {
+  const paths = {
+    search:  <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+    heart:   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>,
+    bag:     <><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></>,
+    grid:    <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>,
+    shirt:   <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46 2 8h4v13h12V8h4L20.38 3.46z"/>,
+    back:    <polyline points="15 18 9 12 15 6"/>,
+    star:    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>,
+    scissors:<><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></>,
+  };
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" style={{ width:16,height:16, display:'block' }}>
+      {paths[n]}
+    </svg>
+  );
+};
+
+/* ─── PRODUCT CARD ───────────────────────────────────────────── */
+function ProductCard({ product, wishlist, onWishlist, onOpen }) {
+  const liked = wishlist.some(w => w.id === product.id);
+  return (
+    <div className="dw-card" onClick={() => onOpen(product)}>
+      <div className="dw-card-img-wrap">
+        <div className="dw-card-img-placeholder"
+          style={{ background: product.color, fontSize:52, opacity:.55 }}>
+          {product.emoji}
+        </div>
+        <div className="dw-card-tag">{product.tag}</div>
+        <div className={`dw-card-wishlist${liked?" liked":""}`}
+          onClick={e => { e.stopPropagation(); onWishlist(product); }}>
+          <Ico n="heart" />
+        </div>
+      </div>
+      <div className="dw-card-info">
+        <div className="dw-card-meta">{product.tag} · {product.price}</div>
+        <div className="dw-card-name">{product.name}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── PRODUCT DETAIL ─────────────────────────────────────────── */
+function ProductDetail({ product, wishlist, onWishlist, onAddBag, onBack }) {
+  const [size, setSize] = useState(null);
+  const liked = wishlist.some(w => w.id === product.id);
+  return (
+    <div>
+      <button className="dw-btn-back" onClick={onBack}>
+        <Ico n="back" /> Back to collection
+      </button>
+      <div className="dw-detail">
+        <div className="dw-detail-img" style={{ background: product.color, opacity:.7 }}>
+          <span style={{ fontSize:96, opacity:.55 }}>{product.emoji}</span>
+        </div>
+        <div className="dw-detail-right">
+          <div>
+            <div className="dw-detail-tag">{product.tag}</div>
+            <div className="dw-detail-name">{product.name}</div>
+            <div className="dw-detail-price">{product.price}</div>
+          </div>
+          <p className="dw-detail-desc">{product.desc}</p>
+          <div className="dw-detail-divider" />
+          <div>
+            <div className="dw-size-label">Select Size</div>
+            <div className="dw-sizes">
+              {product.sizes.map(s => (
+                <button key={s} className={`dw-size-btn${size===s?" active":""}`} onClick={() => setSize(s)}>{s}</button>
+              ))}
+            </div>
+          </div>
+          <div className="dw-detail-actions">
+            <button className="dw-btn-primary" onClick={() => onAddBag(product)}>Add to Bag</button>
+            <button className="dw-btn-secondary" onClick={() => onWishlist(product)}>
+              {liked ? "♥ Saved" : "♡ Save"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── TRY-ON PAGE ────────────────────────────────────────────── */
+function TryOnPage() {
+  return (
+    <div className="dw-page-center">
+      <span className="dw-page-eyebrow">Darpan AI · Beta</span>
+      <div className="dw-page-big">Virtual Try-On</div>
+      <p className="dw-page-sub">
+        Upload your photo alongside any garment from the archive to preview the perfect fit.
+      </p>
+      <button className="dw-btn-primary" style={{ width:"auto", padding:"12px 32px" }}>
+        Launch Studio
+      </button>
+    </div>
+  );
+}
+
+/* ─── FIND PAGE ──────────────────────────────────────────────── */
+function FindPage({ products, onOpen }) {
+  const [query, setQuery] = useState("");
+  const results = query.trim()
+    ? products.filter(p =>
+        p.name.toLowerCase().includes(query.toLowerCase()) ||
+        p.tag.toLowerCase().includes(query.toLowerCase()))
+    : [];
+  const CHIPS = ["Tops","Bottoms","Outerwear","Silk","Indigo","Coat"];
+  return (
+    <div className="dw-find-wrap">
+      <div>
+        <div className="dw-section-eyebrow">Search the Archive</div>
+        <h1 className="dw-section-title">Find Your Piece</h1>
+      </div>
+      <div className="dw-search-bar">
+        <Ico n="search" />
+        <input
+          className="dw-search-input"
+          placeholder="Search garments, categories…"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          autoFocus
+        />
+        {query && <span style={{ fontSize:16, cursor:"pointer", color:"var(--muted)" }} onClick={() => setQuery("")}>×</span>}
+      </div>
+      {query
+        ? results.length === 0
+          ? <div style={{ color:"var(--muted)", fontFamily:"'Cormorant Garamond',serif", fontStyle:"italic", fontSize:18 }}>No results for "{query}"</div>
+          : <div className="dw-grid">
+              {results.map(p => (
+                <div key={p.id} className="dw-card" onClick={() => onOpen(p)}>
+                  <div className="dw-card-img-wrap">
+                    <div className="dw-card-img-placeholder" style={{ background:p.color, fontSize:52, opacity:.5 }}>{p.emoji}</div>
+                    <div className="dw-card-tag">{p.tag}</div>
+                  </div>
+                  <div className="dw-card-info">
+                    <div className="dw-card-meta">{p.tag} · {p.price}</div>
+                    <div className="dw-card-name">{p.name}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+        : <div className="dw-tag-chips">
+            {CHIPS.map(c => (
+              <button key={c} className="dw-filter-btn" onClick={() => setQuery(c)}>{c}</button>
+            ))}
+          </div>
+      }
+    </div>
+  );
+}
+
+/* ─── SIDE PANEL ─────────────────────────────────────────────── */
+function SidePanel({ title, items, onRemove, onClose, ctaLabel }) {
+  const total = items.reduce((s, i) => s + parseInt(i.price.replace(/[^\d]/g,"")), 0);
+  return (
+    <>
+      <div className="dw-panel-overlay" onClick={onClose} />
+      <div className="dw-panel">
+        <div className="dw-panel-header">
+          <div className="dw-panel-title">{title} {items.length > 0 && `(${items.length})`}</div>
+          <button className="dw-panel-close" onClick={onClose}>×</button>
+        </div>
+        <div className="dw-panel-body">
+          {items.length === 0
+            ? <div className="dw-panel-empty">Your {title.toLowerCase()} is empty</div>
+            : items.map(item => (
+                <div key={item.id} className="dw-panel-item">
+                  <div className="dw-panel-item-img" style={{ background: item.color }}>{item.emoji}</div>
+                  <div className="dw-panel-item-info">
+                    <div className="dw-panel-item-name">{item.name}</div>
+                    <div className="dw-panel-item-sub">{item.tag} · {item.price}</div>
+                  </div>
+                  <div className="dw-panel-item-remove" onClick={() => onRemove(item.id)}>✕</div>
+                </div>
+              ))
+          }
+        </div>
+        {items.length > 0 && (
+          <div className="dw-panel-footer">
+            <div className="dw-panel-total">
+              <span>Total</span>
+              <span style={{ color:"var(--text-inv)", fontWeight:600 }}>₹{total.toLocaleString("en-IN")}</span>
+            </div>
+            <button className="dw-panel-cta">{ctaLabel}</button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ─── ROOT ───────────────────────────────────────────────────── */
+export default function Page() {
+  const [page,     setPage]     = useState("Wardrobe");
+  const [category, setCategory] = useState("All");
+  const [filter,   setFilter]   = useState("All");
+  const [detail,   setDetail]   = useState(null);
+  const [wishlist, setWishlist] = useState([]);
+  const [bag,      setBag]      = useState([]);
+  const [panel,    setPanel]    = useState(null);  // "wishlist" | "bag" | null
+  const [toast,    setToast]    = useState(null);
+
+  const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 2400); };
+
+  const goPage = pg => { setPage(pg); setDetail(null); };
+
+  const toggleWishlist = product => {
+    setWishlist(prev => {
+      const exists = prev.some(w => w.id === product.id);
+      showToast(exists ? "Removed from wishlist" : `${product.name} saved ♥`);
+      return exists ? prev.filter(w => w.id !== product.id) : [...prev, product];
+    });
+  };
+
+  const addToBag = product => {
+    setBag(prev => {
+      if (prev.some(b => b.id === product.id)) { showToast("Already in bag"); return prev; }
+      showToast(`${product.name} added to bag`);
+      return [...prev, product];
+    });
+  };
+
+  /* Filtered products for wardrobe grid */
+  const visible = PRODUCTS.filter(p => {
+    const byCat = category === "All" || p.tag === category.toUpperCase();
+    const byFilter =
+      filter === "All" ||
+      filter === "Curated" ||
+      filter === "New" ||
+      (filter === "Saved" && wishlist.some(w => w.id === p.id));
+    return byCat && byFilter;
+  });
+
+  /* Sidebar icon map */
+  const sidebarIcon = cat =>
+    cat === "Tops" || cat === "Accessories" ? "shirt"
+    : cat === "Bottoms" ? "scissors"
+    : cat === "Outerwear" ? "shirt"
+    : "grid";
+
+  return (
+    <>
+      <style>{CSS}</style>
+      <div className="dw-root">
+
+        {/* TOP NAV */}
+        <nav className="dw-topnav">
+          <div className="dw-logo" onClick={() => goPage("Wardrobe")}>DARPAN</div>
+          <div className="dw-nav-links">
+            {NAV_PAGES.map(pg => (
+              <div key={pg} className={`dw-nav-link${page===pg?" active":""}`} onClick={() => goPage(pg)}>{pg}</div>
+            ))}
+          </div>
+          <div className="dw-nav-icons">
+            <div className="dw-nav-icon" onClick={() => setPanel("bag")} title="Bag">
+              <Ico n="bag" />
+              {bag.length > 0 && <div className="dw-badge">{bag.length}</div>}
+            </div>
+            <div className="dw-nav-icon" onClick={() => setPanel("wishlist")} title="Wishlist">
+              <Ico n="heart" />
+              {wishlist.length > 0 && <div className="dw-badge">{wishlist.length}</div>}
+            </div>
+          </div>
+        </nav>
+
+        {/* BODY */}
+        <div className="dw-body">
+
+          {/* SIDEBAR */}
+          <aside className="dw-sidebar">
+            <div className="dw-sidebar-logo" onClick={() => goPage("Wardrobe")}>DARPAN</div>
+            <div className="dw-sidebar-tagline">Archive Collective</div>
+
+            <div className="dw-sidebar-section">Category</div>
+            {SIDEBAR_CATS.map(cat => (
+              <div
+                key={cat}
+                className={`dw-sidebar-item${category===cat && page==="Wardrobe" && !detail ? " active" : ""}`}
+                onClick={() => { setCategory(cat); setDetail(null); setPage("Wardrobe"); }}
+              >
+                <Ico n={sidebarIcon(cat)} />
+                {cat}
+              </div>
+            ))}
+
+            <div className="dw-sidebar-divider" />
+            <div className="dw-sidebar-section">Discover</div>
+
+            <div className={`dw-sidebar-item${page==="Try-On"?" active":""}`} onClick={() => goPage("Try-On")}>
+              <Ico n="star" /> Try-On
+            </div>
+            <div className={`dw-sidebar-item${page==="Find"?" active":""}`} onClick={() => goPage("Find")}>
+              <Ico n="search" /> Find
+            </div>
+            <div
+              className={`dw-sidebar-item${filter==="Saved" && page==="Wardrobe" ? " active" : ""}`}
+              onClick={() => { setFilter("Saved"); setCategory("All"); goPage("Wardrobe"); }}
+            >
+              <Ico n="heart" /> Saved ({wishlist.length})
+            </div>
+          </aside>
+
+          {/* MAIN CONTENT */}
+          <main className="dw-main">
+
+            {/* ── Wardrobe: Detail ── */}
+            {page === "Wardrobe" && detail ? (
+              <ProductDetail
+                product={detail}
+                wishlist={wishlist}
+                onWishlist={toggleWishlist}
+                onAddBag={addToBag}
+                onBack={() => setDetail(null)}
+              />
+
+            /* ── Wardrobe: Grid ── */
+            ) : page === "Wardrobe" ? (
+              <>
+                <div className="dw-content-header">
+                  <div>
+                    <div className="dw-section-eyebrow">A Study in Texture and Silhouette</div>
+                    <h1 className="dw-section-title">The Curator's Selection</h1>
+                    <p className="dw-section-desc">
+                      Explore our modular archive designed for the modern atelier lifestyle,
+                      where every piece is a foundational element.
+                    </p>
+                  </div>
+                  <div className="dw-header-right">
+                    {FILTERS.map(f => (
+                      <button
+                        key={f}
+                        className={`dw-filter-btn${filter===f?" active":""}`}
+                        onClick={() => setFilter(f)}
+                      >{f}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {visible.length === 0
+                  ? <div style={{ color:"var(--muted)", fontFamily:"'Cormorant Garamond',serif", fontStyle:"italic", fontSize:20, marginTop:24 }}>
+                      No pieces in this selection.
+                    </div>
+                  : <div className="dw-grid">
+                      {visible.map(p => (
+                        <ProductCard
+                          key={p.id} product={p}
+                          wishlist={wishlist}
+                          onWishlist={toggleWishlist}
+                          onOpen={prod => setDetail(prod)}
+                        />
+                      ))}
+                    </div>
+                }
+              </>
+
+            /* ── Try-On Page ── */
+            ) : page === "Try-On" ? (
+              <TryOnPage />
+
+            /* ── Find Page ── */
+            ) : page === "Find" ? (
+              <FindPage
+                products={PRODUCTS}
+                onOpen={prod => { setDetail(prod); setPage("Wardrobe"); }}
+              />
+            ) : null}
+
+          </main>
+        </div>
+
+        {/* FOOTER */}
+        <footer className="dw-footer">
+          <div className="dw-footer-left">© 2024 Darpan · Archive Collective</div>
+          <div className="dw-footer-links">
+            {["Privacy Policy","Terms of Service","Contact"].map(l => (
+              <div key={l} className="dw-footer-link">{l}</div>
+            ))}
+          </div>
+        </footer>
+
+        {/* SIDE PANELS */}
+        {panel === "wishlist" && (
+          <SidePanel
+            title="Wishlist"
+            items={wishlist}
+            onRemove={id => setWishlist(prev => prev.filter(w => w.id !== id))}
+            onClose={() => setPanel(null)}
+            ctaLabel="Move All to Bag"
+          />
+        )}
+        {panel === "bag" && (
+          <SidePanel
+            title="Your Bag"
+            items={bag}
+            onRemove={id => setBag(prev => prev.filter(b => b.id !== id))}
+            onClose={() => setPanel(null)}
+            ctaLabel="Proceed to Checkout"
+          />
+        )}
+
+        {/* TOAST */}
+        {toast && <div className="dw-toast">{toast}</div>}
+
+      </div>
+    </>
+  );
+}
+
+
+
