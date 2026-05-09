@@ -1,5 +1,9 @@
 "use client";
 import { useState } from "react";
+import Navbar from "@/components/wardrobe/Navbar";
+import Sidebar from "@/components/wardrobe/Sidebar";
+import ProductCard from "@/components/wardrobe/ProductCard";
+import ProductDetail from "@/components/wardrobe/ProductDetail";
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap');
@@ -339,70 +343,26 @@ const Ico = ({ n }) => {
 };
 
 /* ─── PRODUCT CARD ───────────────────────────────────────────── */
-function ProductCard({ product, wishlist, onWishlist, onOpen }) {
-  const liked = wishlist.some(w => w.id === product.id);
-  return (
-    <div className="dw-card" onClick={() => onOpen(product)}>
-      <div className="dw-card-img-wrap">
-        <div className="dw-card-img-placeholder"
-          style={{ background: product.color, fontSize:52, opacity:.55 }}>
-          {product.emoji}
-        </div>
-        <div className="dw-card-tag">{product.tag}</div>
-        <div className={`dw-card-wishlist${liked?" liked":""}`}
-          onClick={e => { e.stopPropagation(); onWishlist(product); }}>
-          <Ico n="heart" />
-        </div>
-      </div>
-      <div className="dw-card-info">
-        <div className="dw-card-meta">{product.tag} · {product.price}</div>
-        <div className="dw-card-name">{product.name}</div>
-      </div>
-    </div>
-  );
-}
+{visible.map(p => (
+  <ProductCard
+    key={p.id}
+    product={p}
+    wishlist={wishlist}
+    onWishlist={toggleWishlist}
+    onOpen={(prod) => setDetail(prod)}
+  />
+))}
 
 /* ─── PRODUCT DETAIL ─────────────────────────────────────────── */
-function ProductDetail({ product, wishlist, onWishlist, onAddBag, onBack }) {
-  const [size, setSize] = useState(null);
-  const liked = wishlist.some(w => w.id === product.id);
-  return (
-    <div>
-      <button className="dw-btn-back" onClick={onBack}>
-        <Ico n="back" /> Back to collection
-      </button>
-      <div className="dw-detail">
-        <div className="dw-detail-img" style={{ background: product.color, opacity:.7 }}>
-          <span style={{ fontSize:96, opacity:.55 }}>{product.emoji}</span>
-        </div>
-        <div className="dw-detail-right">
-          <div>
-            <div className="dw-detail-tag">{product.tag}</div>
-            <div className="dw-detail-name">{product.name}</div>
-            <div className="dw-detail-price">{product.price}</div>
-          </div>
-          <p className="dw-detail-desc">{product.desc}</p>
-          <div className="dw-detail-divider" />
-          <div>
-            <div className="dw-size-label">Select Size</div>
-            <div className="dw-sizes">
-              {product.sizes.map(s => (
-                <button key={s} className={`dw-size-btn${size===s?" active":""}`} onClick={() => setSize(s)}>{s}</button>
-              ))}
-            </div>
-          </div>
-          <div className="dw-detail-actions">
-            <button className="dw-btn-primary" onClick={() => onAddBag(product)}>Add to Bag</button>
-            <button className="dw-btn-secondary" onClick={() => onWishlist(product)}>
-              {liked ? "♥ Saved" : "♡ Save"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
+{page === "Wardrobe" && detail ? (
+  <ProductDetail
+    product={detail}
+    wishlist={wishlist}
+    onWishlist={toggleWishlist}
+    onAddBag={addToBag}
+    onBack={() => setDetail(null)}
+  />
+       
 /* ─── TRY-ON PAGE ────────────────────────────────────────────── */
 function TryOnPage() {
   return (
@@ -565,63 +525,29 @@ export default function Page() {
     <>
       <style>{CSS}</style>
       <div className="dw-root">
+        
+ {/* NAVBAR */}
+        <Navbar
+  page={page}
+  goPage={goPage}
+  bag={bag}
+  wishlist={wishlist}
+  setPanel={setPanel}
+/>
 
-        {/* TOP NAV */}
-        <nav className="dw-topnav">
-          <div className="dw-logo" onClick={() => goPage("Wardrobe")}>DARPAN</div>
-          <div className="dw-nav-links">
-            {NAV_PAGES.map(pg => (
-              <div key={pg} className={`dw-nav-link${page===pg?" active":""}`} onClick={() => goPage(pg)}>{pg}</div>
-            ))}
-          </div>
-          <div className="dw-nav-icons">
-            <div className="dw-nav-icon" onClick={() => setPanel("bag")} title="Bag">
-              <Ico n="bag" />
-              {bag.length > 0 && <div className="dw-badge">{bag.length}</div>}
-            </div>
-            <div className="dw-nav-icon" onClick={() => setPanel("wishlist")} title="Wishlist">
-              <Ico n="heart" />
-              {wishlist.length > 0 && <div className="dw-badge">{wishlist.length}</div>}
-            </div>
-          </div>
-        </nav>
-
-        {/* BODY */}
+ {/* BODY */}
         <div className="dw-body">
-
-          {/* SIDEBAR */}
-          <aside className="dw-sidebar">
-            <div className="dw-sidebar-logo" onClick={() => goPage("Wardrobe")}>DARPAN</div>
-            <div className="dw-sidebar-tagline">Archive Collective</div>
-
-            <div className="dw-sidebar-section">Category</div>
-            {SIDEBAR_CATS.map(cat => (
-              <div
-                key={cat}
-                className={`dw-sidebar-item${category===cat && page==="Wardrobe" && !detail ? " active" : ""}`}
-                onClick={() => { setCategory(cat); setDetail(null); setPage("Wardrobe"); }}
-              >
-                <Ico n={sidebarIcon(cat)} />
-                {cat}
-              </div>
-            ))}
-
-            <div className="dw-sidebar-divider" />
-            <div className="dw-sidebar-section">Discover</div>
-
-            <div className={`dw-sidebar-item${page==="Try-On"?" active":""}`} onClick={() => goPage("Try-On")}>
-              <Ico n="star" /> Try-On
-            </div>
-            <div className={`dw-sidebar-item${page==="Find"?" active":""}`} onClick={() => goPage("Find")}>
-              <Ico n="search" /> Find
-            </div>
-            <div
-              className={`dw-sidebar-item${filter==="Saved" && page==="Wardrobe" ? " active" : ""}`}
-              onClick={() => { setFilter("Saved"); setCategory("All"); goPage("Wardrobe"); }}
-            >
-              <Ico n="heart" /> Saved ({wishlist.length})
-            </div>
-          </aside>
+          
+ {/* SIDEBAR */}
+      <Sidebar
+  category={category}
+  setCategory={setCategory}
+  page={page}
+  goPage={goPage}
+  setDetail={setDetail}
+  setFilter={setFilter}
+  wishlist={wishlist}
+/>
 
           {/* MAIN CONTENT */}
           <main className="dw-main">
