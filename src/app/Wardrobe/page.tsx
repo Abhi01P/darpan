@@ -4,6 +4,8 @@ import Navbar from "@/components/wardrobe/Navbar";
 import Sidebar from "@/components/wardrobe/Sidebar";
 import ProductCard from "@/components/wardrobe/ProductCard";
 import ProductDetail from "@/components/wardrobe/ProductDetail";
+import TryOnPage from "@/components/wardrobe/TryOnPage";
+
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap');
@@ -364,74 +366,22 @@ const Ico = ({ n }) => {
   />
        
 /* ─── TRY-ON PAGE ────────────────────────────────────────────── */
-function TryOnPage() {
-  return (
-    <div className="dw-page-center">
-      <span className="dw-page-eyebrow">Darpan AI · Beta</span>
-      <div className="dw-page-big">Virtual Try-On</div>
-      <p className="dw-page-sub">
-        Upload your photo alongside any garment from the archive to preview the perfect fit.
-      </p>
-      <button className="dw-btn-primary" style={{ width:"auto", padding:"12px 32px" }}>
-        Launch Studio
-      </button>
-    </div>
-  );
-}
+
+ ) : page === "Try-On" ? (
+  <TryOnPage />
+)
 
 /* ─── FIND PAGE ──────────────────────────────────────────────── */
-function FindPage({ products, onOpen }) {
-  const [query, setQuery] = useState("");
-  const results = query.trim()
-    ? products.filter(p =>
-        p.name.toLowerCase().includes(query.toLowerCase()) ||
-        p.tag.toLowerCase().includes(query.toLowerCase()))
-    : [];
-  const CHIPS = ["Tops","Bottoms","Outerwear","Silk","Indigo","Coat"];
-  return (
-    <div className="dw-find-wrap">
-      <div>
-        <div className="dw-section-eyebrow">Search the Archive</div>
-        <h1 className="dw-section-title">Find Your Piece</h1>
-      </div>
-      <div className="dw-search-bar">
-        <Ico n="search" />
-        <input
-          className="dw-search-input"
-          placeholder="Search garments, categories…"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          autoFocus
-        />
-        {query && <span style={{ fontSize:16, cursor:"pointer", color:"var(--muted)" }} onClick={() => setQuery("")}>×</span>}
-      </div>
-      {query
-        ? results.length === 0
-          ? <div style={{ color:"var(--muted)", fontFamily:"'Cormorant Garamond',serif", fontStyle:"italic", fontSize:18 }}>No results for "{query}"</div>
-          : <div className="dw-grid">
-              {results.map(p => (
-                <div key={p.id} className="dw-card" onClick={() => onOpen(p)}>
-                  <div className="dw-card-img-wrap">
-                    <div className="dw-card-img-placeholder" style={{ background:p.color, fontSize:52, opacity:.5 }}>{p.emoji}</div>
-                    <div className="dw-card-tag">{p.tag}</div>
-                  </div>
-                  <div className="dw-card-info">
-                    <div className="dw-card-meta">{p.tag} · {p.price}</div>
-                    <div className="dw-card-name">{p.name}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-        : <div className="dw-tag-chips">
-            {CHIPS.map(c => (
-              <button key={c} className="dw-filter-btn" onClick={() => setQuery(c)}>{c}</button>
-            ))}
-          </div>
-      }
-    </div>
-  );
-}
-
+) : page === "Find" ? (
+  <FindPage
+    products={PRODUCTS}
+    onOpen={(prod) => {
+      setDetail(prod);
+      setPage("Wardrobe");
+    }}
+  />
+)
+  
 /* ─── SIDE PANEL ─────────────────────────────────────────────── */
 function SidePanel({ title, items, onRemove, onClose, ctaLabel }) {
   const total = items.reduce((s, i) => s + parseInt(i.price.replace(/[^\d]/g,"")), 0);
@@ -618,14 +568,7 @@ export default function Page() {
         </div>
 
         {/* FOOTER */}
-        <footer className="dw-footer">
-          <div className="dw-footer-left">© 2024 Darpan · Archive Collective</div>
-          <div className="dw-footer-links">
-            {["Privacy Policy","Terms of Service","Contact"].map(l => (
-              <div key={l} className="dw-footer-link">{l}</div>
-            ))}
-          </div>
-        </footer>
+        <Footer />
 
         {/* SIDE PANELS */}
         {panel === "wishlist" && (
