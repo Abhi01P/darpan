@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { Ico } from "@/app/wardrobe/page";
+
+const CHIPS = ["Tops", "Bottoms", "Outerwear", "Accessories", "Silk", "Denim"];
 
 export default function FindPage({ products, onOpen }) {
   const [query, setQuery] = useState("");

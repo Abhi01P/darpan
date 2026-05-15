@@ -1,6 +1,10 @@
 "use client";
 
-export default function Navbar({ setPage }: any) {
+import { Ico } from "@/app/wardrobe/page";
+
+const NAV_PAGES = ["Wardrobe", "Try-On", "Find"];
+
+export default function Navbar({ page, goPage, bag, wishlist, setPanel }) {
   return (
     <nav className="dw-topnav">
           <div className="dw-logo" onClick={() => goPage("Wardrobe")}>DARPAN</div>

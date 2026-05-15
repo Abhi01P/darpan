@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
 import Navbar from "@/components/wardrobe/Navbar";
-import Sidebar from "@/components/wardrobe/Sidebar";
-import ProductCard from "@/components/wardrobe/ProductCard";
-import ProductDetail from "@/components/wardrobe/ProductDetail";
+import {Sidebar} from "@/components/wardrobe/Sidebar";
+import {ProductCard} from "@/components/wardrobe/ProductCard";
+import {ProductDetail} from "@/components/wardrobe/ProductDetail";
 import TryOnPage from "@/components/wardrobe/TryOnPage";
-
+import FindPage from "@/components/wardrobe/Findpage";
+import Footer from "@/components/wardrobe/Footer";
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap');
@@ -310,7 +311,7 @@ const CSS = `
 }
 `;
 
-* ─── PRODUCTS DATA ──────────────────────────────────────────── */
+/* ─── PRODUCTS DATA ──────────────────────────────────────────── */
 const PRODUCTS = [
   { id:1, tag:"TOPS",      name:"Sculpted Silk Tunic",      color:"#7a9090", emoji:"👔", price:"₹4,800", sizes:["XS","S","M","L"],         desc:"A fluid silk tunic cut with architectural precision. The sculptural drape frames the torso with effortless grace, blending structure and softness." },
   { id:2, tag:"BOTTOMS",   name:"Raw Indigo Straight Cut",   color:"#2c3a50", emoji:"👖", price:"₹3,200", sizes:["28","30","32","34","36"],  desc:"Selvedge denim washed in raw indigo. The straight cut sits cleanly on the hip and falls with a confident, unfussy line." },
@@ -320,13 +321,13 @@ const PRODUCTS = [
   { id:6, tag:"OUTERWEAR", name:"Plane Sweatshirt",          color:"#6a6058", emoji:"🧥", price:"₹3,600", sizes:["S","M","L","XL"],          desc:"Heavyweight French terry in tonal mushroom. Garment-dyed for a lived-in finish that only improves with time." },
 ];
 
-const SIDEBAR_CATS = ["All","Tops","Bottoms","Outerwear","Accessories"];
+export const SIDEBAR_CATS = ["All","Tops","Bottoms","Outerwear","Accessories"];
 const FILTERS      = ["All","Curated","New","Saved"];
 const NAV_PAGES    = ["Wardrobe","Try-On","Find"];
 
 /* ─── SVG ICONS ──────────────────────────────────────────────── */
-const Ico = ({ n }) => {
-  const paths = {
+export const Ico = ({ n }: any) => {
+  const paths: any = {
     search:  <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
     heart:   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>,
     bag:     <><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></>,
@@ -344,47 +345,11 @@ const Ico = ({ n }) => {
   );
 };
 
-/* ─── PRODUCT CARD ───────────────────────────────────────────── */
-{visible.map(p => (
-  <ProductCard
-    key={p.id}
-    product={p}
-    wishlist={wishlist}
-    onWishlist={toggleWishlist}
-    onOpen={(prod) => setDetail(prod)}
-  />
-))}
 
-/* ─── PRODUCT DETAIL ─────────────────────────────────────────── */
-{page === "Wardrobe" && detail ? (
-  <ProductDetail
-    product={detail}
-    wishlist={wishlist}
-    onWishlist={toggleWishlist}
-    onAddBag={addToBag}
-    onBack={() => setDetail(null)}
-  />
-       
-/* ─── TRY-ON PAGE ────────────────────────────────────────────── */
-
- ) : page === "Try-On" ? (
-  <TryOnPage />
-)
-
-/* ─── FIND PAGE ──────────────────────────────────────────────── */
-) : page === "Find" ? (
-  <FindPage
-    products={PRODUCTS}
-    onOpen={(prod) => {
-      setDetail(prod);
-      setPage("Wardrobe");
-    }}
-  />
-)
   
 /* ─── SIDE PANEL ─────────────────────────────────────────────── */
-function SidePanel({ title, items, onRemove, onClose, ctaLabel }) {
-  const total = items.reduce((s, i) => s + parseInt(i.price.replace(/[^\d]/g,"")), 0);
+function SidePanel({ title, items, onRemove, onClose, ctaLabel }: any) {
+  const total = items.reduce((s: any, i: any) => s + parseInt(i.price.replace(/[^\d]/g,"")), 0);
   return (
     <>
       <div className="dw-panel-overlay" onClick={onClose} />
@@ -396,7 +361,7 @@ function SidePanel({ title, items, onRemove, onClose, ctaLabel }) {
         <div className="dw-panel-body">
           {items.length === 0
             ? <div className="dw-panel-empty">Your {title.toLowerCase()} is empty</div>
-            : items.map(item => (
+            : items.map((item: any) => (
                 <div key={item.id} className="dw-panel-item">
                   <div className="dw-panel-item-img" style={{ background: item.color }}>{item.emoji}</div>
                   <div className="dw-panel-item-info">
@@ -428,16 +393,16 @@ export default function Page() {
   const [category, setCategory] = useState("All");
   const [filter,   setFilter]   = useState("All");
   const [detail,   setDetail]   = useState(null);
-  const [wishlist, setWishlist] = useState([]);
-  const [bag,      setBag]      = useState([]);
-  const [panel,    setPanel]    = useState(null);  // "wishlist" | "bag" | null
-  const [toast,    setToast]    = useState(null);
+  const [wishlist, setWishlist] = useState<any[]>([]);
+  const [bag,      setBag]      = useState<any[]>([]);
+  const [panel,    setPanel]    = useState<any>(null);  // "wishlist" | "bag" | null
+  const [toast,    setToast]    = useState<any>(null);
 
-  const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 2400); };
+  const showToast = (msg: any) => { setToast(msg); setTimeout(() => setToast(null), 2400); };
 
-  const goPage = pg => { setPage(pg); setDetail(null); };
+  const goPage = (pg: any) => { setPage(pg); setDetail(null); };
 
-  const toggleWishlist = product => {
+  const toggleWishlist = (product: any) => {
     setWishlist(prev => {
       const exists = prev.some(w => w.id === product.id);
       showToast(exists ? "Removed from wishlist" : `${product.name} saved ♥`);
@@ -445,7 +410,7 @@ export default function Page() {
     });
   };
 
-  const addToBag = product => {
+  const addToBag = (product: any) => {
     setBag(prev => {
       if (prev.some(b => b.id === product.id)) { showToast("Already in bag"); return prev; }
       showToast(`${product.name} added to bag`);
@@ -465,7 +430,7 @@ export default function Page() {
   });
 
   /* Sidebar icon map */
-  const sidebarIcon = cat =>
+  const sidebarIcon = (cat: any) =>
     cat === "Tops" || cat === "Accessories" ? "shirt"
     : cat === "Bottoms" ? "scissors"
     : cat === "Outerwear" ? "shirt"
@@ -497,6 +462,9 @@ export default function Page() {
   setDetail={setDetail}
   setFilter={setFilter}
   wishlist={wishlist}
+  detail={detail}
+  filter={filter}
+  setPage={setPage}
 />
 
           {/* MAIN CONTENT */}
@@ -545,7 +513,7 @@ export default function Page() {
                           key={p.id} product={p}
                           wishlist={wishlist}
                           onWishlist={toggleWishlist}
-                          onOpen={prod => setDetail(prod)}
+                          onOpen={(prod: any) => setDetail(prod)}
                         />
                       ))}
                     </div>
@@ -560,7 +528,7 @@ export default function Page() {
             ) : page === "Find" ? (
               <FindPage
                 products={PRODUCTS}
-                onOpen={prod => { setDetail(prod); setPage("Wardrobe"); }}
+                onOpen={(prod: any) => { setDetail(prod); setPage("Wardrobe"); }}
               />
             ) : null}
 
@@ -575,7 +543,7 @@ export default function Page() {
           <SidePanel
             title="Wishlist"
             items={wishlist}
-            onRemove={id => setWishlist(prev => prev.filter(w => w.id !== id))}
+            onRemove={(id: any) => setWishlist(prev => prev.filter(w => w.id !== id))}
             onClose={() => setPanel(null)}
             ctaLabel="Move All to Bag"
           />
@@ -584,7 +552,7 @@ export default function Page() {
           <SidePanel
             title="Your Bag"
             items={bag}
-            onRemove={id => setBag(prev => prev.filter(b => b.id !== id))}
+            onRemove={(id: any) => setBag(prev => prev.filter(b => b.id !== id))}
             onClose={() => setPanel(null)}
             ctaLabel="Proceed to Checkout"
           />

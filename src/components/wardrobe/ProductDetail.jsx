@@ -1,4 +1,7 @@
-function ProductDetail({ product, wishlist, onWishlist, onAddBag, onBack }) {
+import { useState } from "react";
+import { Ico } from "@/app/wardrobe/page";
+
+export function ProductDetail({ product, wishlist, onWishlist, onAddBag, onBack }) {
   const [size, setSize] = useState(null);
   const liked = wishlist.some(w => w.id === product.id);
   return (

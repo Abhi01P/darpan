@@ -1,4 +1,6 @@
-function ProductCard({ product, wishlist, onWishlist, onOpen }) {
+import { Ico } from "@/app/wardrobe/page";
+
+export function ProductCard({ product, wishlist, onWishlist, onOpen }) {
   const liked = wishlist.some(w => w.id === product.id);
   return (
     <div className="dw-card" onClick={() => onOpen(product)}>
