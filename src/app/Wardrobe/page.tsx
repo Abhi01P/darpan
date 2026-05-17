@@ -1,12 +1,15 @@
 "use client";
 import { useState } from "react";
 import Navbar from "@/components/wardrobe/Navbar";
-import {Sidebar} from "@/components/wardrobe/Sidebar";
-import {ProductCard} from "@/components/wardrobe/ProductCard";
-import {ProductDetail} from "@/components/wardrobe/ProductDetail";
+import { Sidebar } from "@/components/wardrobe/Sidebar";
+import { ProductCard } from "@/components/wardrobe/ProductCard";
+import { ProductDetail } from "@/components/wardrobe/ProductDetail";
 import TryOnPage from "@/components/wardrobe/TryOnPage";
 import FindPage from "@/components/wardrobe/Findpage";
 import Footer from "@/components/wardrobe/Footer";
+
+import { UploadModal } from "@/components/wardrobe/UploadModal";
+import { SIDEBAR_CATS, Ico } from "@/components/wardrobe/shared";
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap');
@@ -313,43 +316,21 @@ const CSS = `
 
 /* ─── PRODUCTS DATA ──────────────────────────────────────────── */
 const PRODUCTS = [
-  { id:1, tag:"TOPS",      name:"Sculpted Silk Tunic",      color:"#7a9090", emoji:"👔", price:"₹4,800", sizes:["XS","S","M","L"],         desc:"A fluid silk tunic cut with architectural precision. The sculptural drape frames the torso with effortless grace, blending structure and softness." },
-  { id:2, tag:"BOTTOMS",   name:"Raw Indigo Straight Cut",   color:"#2c3a50", emoji:"👖", price:"₹3,200", sizes:["28","30","32","34","36"],  desc:"Selvedge denim washed in raw indigo. The straight cut sits cleanly on the hip and falls with a confident, unfussy line." },
-  { id:3, tag:"BOTTOMS",   name:"Canvas Pleat Trouser",      color:"#8a7860", emoji:"👖", price:"₹2,950", sizes:["S","M","L","XL"],          desc:"High-rise pleated trousers in medium-weight canvas. Italian-inspired silhouette with a tapered leg and deep side pockets." },
-  { id:4, tag:"OUTERWEAR", name:"Structure Coat No. 04",     color:"#8c2828", emoji:"🧥", price:"₹9,600", sizes:["XS","S","M","L","XL"],     desc:"A structured double-breasted coat in cardinal wool. The fourth in our annual coat series — bolder cut, wider lapels." },
-  { id:5, tag:"TOPS",      name:"Atelier Cotton Tee",        color:"#c8c0b8", emoji:"👕", price:"₹1,400", sizes:["XS","S","M","L","XL","XXL"], desc:"Foundation-weight Supima cotton in a classic box silhouette. The invisible backbone of every capsule wardrobe." },
-  { id:6, tag:"OUTERWEAR", name:"Plane Sweatshirt",          color:"#6a6058", emoji:"🧥", price:"₹3,600", sizes:["S","M","L","XL"],          desc:"Heavyweight French terry in tonal mushroom. Garment-dyed for a lived-in finish that only improves with time." },
+  { id: 1, tag: "TOPS", name: "Sculpted Silk Tunic", image_url: "https://images.unsplash.com/photo-1596755094514-f87e32f85e2c?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹4,800", sizes: ["XS", "S", "M", "L"], desc: "A fluid silk tunic cut with architectural precision. The sculptural drape frames the torso with effortless grace, blending structure and softness." },
+  { id: 2, tag: "BOTTOMS", name: "Raw Indigo Straight Cut", image_url: "https://images.unsplash.com/photo-1542272604-780c8d52261d?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹3,200", sizes: ["28", "30", "32", "34", "36"], desc: "Selvedge denim washed in raw indigo. The straight cut sits cleanly on the hip and falls with a confident, unfussy line." },
+  { id: 3, tag: "BOTTOMS", name: "Canvas Pleat Trouser", image_url: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹2,950", sizes: ["S", "M", "L", "XL"], desc: "High-rise pleated trousers in medium-weight canvas. Italian-inspired silhouette with a tapered leg and deep side pockets." },
+  { id: 4, tag: "OUTERWEAR", name: "Structure Coat No. 04", image_url: "https://images.unsplash.com/photo-1539533113208-f6df8cc8b543?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹9,600", sizes: ["XS", "S", "M", "L", "XL"], desc: "A structured double-breasted coat in cardinal wool. The fourth in our annual coat series — bolder cut, wider lapels." },
+  { id: 5, tag: "TOPS", name: "Atelier Cotton Tee", image_url: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹1,400", sizes: ["XS", "S", "M", "L", "XL", "XXL"], desc: "Foundation-weight Supima cotton in a classic box silhouette. The invisible backbone of every capsule wardrobe." },
+  { id: 6, tag: "OUTERWEAR", name: "Plane Sweatshirt", image_url: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹3,600", sizes: ["S", "M", "L", "XL"], desc: "Heavyweight French terry in tonal mushroom. Garment-dyed for a lived-in finish that only improves with time." },
 ];
 
-export const SIDEBAR_CATS = ["All","Tops","Bottoms","Outerwear","Accessories"];
-const FILTERS      = ["All","Curated","New","Saved"];
-const NAV_PAGES    = ["Wardrobe","Try-On","Find"];
-
-/* ─── SVG ICONS ──────────────────────────────────────────────── */
-export const Ico = ({ n }: any) => {
-  const paths: any = {
-    search:  <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
-    heart:   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>,
-    bag:     <><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></>,
-    grid:    <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>,
-    shirt:   <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46 2 8h4v13h12V8h4L20.38 3.46z"/>,
-    back:    <polyline points="15 18 9 12 15 6"/>,
-    star:    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>,
-    scissors:<><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></>,
-  };
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-      strokeLinecap="round" strokeLinejoin="round" style={{ width:16,height:16, display:'block' }}>
-      {paths[n]}
-    </svg>
-  );
-};
+const FILTERS = ["All", "Curated", "New", "Saved"];
+const NAV_PAGES = ["Wardrobe", "Try-On", "Find"];
 
 
-  
 /* ─── SIDE PANEL ─────────────────────────────────────────────── */
 function SidePanel({ title, items, onRemove, onClose, ctaLabel }: any) {
-  const total = items.reduce((s: any, i: any) => s + parseInt(i.price.replace(/[^\d]/g,"")), 0);
+  const total = items.reduce((s: any, i: any) => s + parseInt(i.price.replace(/[^\d]/g, "")), 0);
   return (
     <>
       <div className="dw-panel-overlay" onClick={onClose} />
@@ -362,22 +343,28 @@ function SidePanel({ title, items, onRemove, onClose, ctaLabel }: any) {
           {items.length === 0
             ? <div className="dw-panel-empty">Your {title.toLowerCase()} is empty</div>
             : items.map((item: any) => (
-                <div key={item.id} className="dw-panel-item">
-                  <div className="dw-panel-item-img" style={{ background: item.color }}>{item.emoji}</div>
-                  <div className="dw-panel-item-info">
-                    <div className="dw-panel-item-name">{item.name}</div>
-                    <div className="dw-panel-item-sub">{item.tag} · {item.price}</div>
-                  </div>
-                  <div className="dw-panel-item-remove" onClick={() => onRemove(item.id)}>✕</div>
+              <div key={item.id} className="dw-panel-item">
+                <div className="dw-panel-item-img" style={{ background: item.color || "rgba(255,255,255,0.05)" }}>
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    item.emoji
+                  )}
                 </div>
-              ))
+                <div className="dw-panel-item-info">
+                  <div className="dw-panel-item-name">{item.name}</div>
+                  <div className="dw-panel-item-sub">{item.tag} · {item.price}</div>
+                </div>
+                <div className="dw-panel-item-remove" onClick={() => onRemove(item.id)}>✕</div>
+              </div>
+            ))
           }
         </div>
         {items.length > 0 && (
           <div className="dw-panel-footer">
             <div className="dw-panel-total">
               <span>Total</span>
-              <span style={{ color:"var(--text-inv)", fontWeight:600 }}>₹{total.toLocaleString("en-IN")}</span>
+              <span style={{ color: "var(--text-inv)", fontWeight: 600 }}>₹{total.toLocaleString("en-IN")}</span>
             </div>
             <button className="dw-panel-cta">{ctaLabel}</button>
           </div>
@@ -389,14 +376,16 @@ function SidePanel({ title, items, onRemove, onClose, ctaLabel }: any) {
 
 /* ─── ROOT ───────────────────────────────────────────────────── */
 export default function Page() {
-  const [page,     setPage]     = useState("Wardrobe");
+  const [products, setProducts] = useState<any[]>(PRODUCTS);
+  const [page, setPage] = useState("Wardrobe");
   const [category, setCategory] = useState("All");
-  const [filter,   setFilter]   = useState("All");
-  const [detail,   setDetail]   = useState(null);
+  const [filter, setFilter] = useState("All");
+  const [detail, setDetail] = useState(null);
   const [wishlist, setWishlist] = useState<any[]>([]);
-  const [bag,      setBag]      = useState<any[]>([]);
-  const [panel,    setPanel]    = useState<any>(null);  // "wishlist" | "bag" | null
-  const [toast,    setToast]    = useState<any>(null);
+  const [bag, setBag] = useState<any[]>([]);
+  const [panel, setPanel] = useState<any>(null);  // "wishlist" | "bag" | null
+  const [toast, setToast] = useState<any>(null);
+  const [isUploadOpen, setUploadOpen] = useState(false);
 
   const showToast = (msg: any) => { setToast(msg); setTimeout(() => setToast(null), 2400); };
 
@@ -419,7 +408,7 @@ export default function Page() {
   };
 
   /* Filtered products for wardrobe grid */
-  const visible = PRODUCTS.filter(p => {
+  const visible = products.filter((p: any) => {
     const byCat = category === "All" || p.tag === category.toUpperCase();
     const byFilter =
       filter === "All" ||
@@ -432,40 +421,40 @@ export default function Page() {
   /* Sidebar icon map */
   const sidebarIcon = (cat: any) =>
     cat === "Tops" || cat === "Accessories" ? "shirt"
-    : cat === "Bottoms" ? "scissors"
-    : cat === "Outerwear" ? "shirt"
-    : "grid";
+      : cat === "Bottoms" ? "scissors"
+        : cat === "Outerwear" ? "shirt"
+          : "grid";
 
   return (
     <>
       <style>{CSS}</style>
       <div className="dw-root">
-        
- {/* NAVBAR */}
-        <Navbar
-  page={page}
-  goPage={goPage}
-  bag={bag}
-  wishlist={wishlist}
-  setPanel={setPanel}
-/>
 
- {/* BODY */}
+        {/* NAVBAR */}
+        <Navbar
+          page={page}
+          goPage={goPage}
+          bag={bag}
+          wishlist={wishlist}
+          setPanel={setPanel}
+        />
+
+        {/* BODY */}
         <div className="dw-body">
-          
- {/* SIDEBAR */}
-      <Sidebar
-  category={category}
-  setCategory={setCategory}
-  page={page}
-  goPage={goPage}
-  setDetail={setDetail}
-  setFilter={setFilter}
-  wishlist={wishlist}
-  detail={detail}
-  filter={filter}
-  setPage={setPage}
-/>
+
+          {/* SIDEBAR */}
+          <Sidebar
+            category={category}
+            setCategory={setCategory}
+            page={page}
+            goPage={goPage}
+            setDetail={setDetail}
+            setFilter={setFilter}
+            wishlist={wishlist}
+            detail={detail}
+            filter={filter}
+            setPage={setPage}
+          />
 
           {/* MAIN CONTENT */}
           <main className="dw-main">
@@ -480,7 +469,7 @@ export default function Page() {
                 onBack={() => setDetail(null)}
               />
 
-            /* ── Wardrobe: Grid ── */
+              /* ── Wardrobe: Grid ── */
             ) : page === "Wardrobe" ? (
               <>
                 <div className="dw-content-header">
@@ -493,10 +482,35 @@ export default function Page() {
                     </p>
                   </div>
                   <div className="dw-header-right">
+                    <button
+                      onClick={() => setUploadOpen(true)}
+                      style={{
+                        background: "linear-gradient(135deg, #e8a0b0 0%, #c86080 100%)",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "20px",
+                        padding: "6px 16px",
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        letterSpacing: "1px",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        boxShadow: "0 4px 14px rgba(232, 64, 112, 0.35)",
+                        transition: "all 0.2s ease",
+                        fontFamily: "'Jost', sans-serif"
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(232, 64, 112, 0.45)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(232, 64, 112, 0.35)"; }}
+                    >
+                      <span style={{ fontSize: 14, lineHeight: 1 }}>+</span> Upload Item
+                    </button>
                     {FILTERS.map(f => (
                       <button
                         key={f}
-                        className={`dw-filter-btn${filter===f?" active":""}`}
+                        className={`dw-filter-btn${filter === f ? " active" : ""}`}
                         onClick={() => setFilter(f)}
                       >{f}</button>
                     ))}
@@ -504,30 +518,30 @@ export default function Page() {
                 </div>
 
                 {visible.length === 0
-                  ? <div style={{ color:"var(--muted)", fontFamily:"'Cormorant Garamond',serif", fontStyle:"italic", fontSize:20, marginTop:24 }}>
-                      No pieces in this selection.
-                    </div>
+                  ? <div style={{ color: "var(--muted)", fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 20, marginTop: 24 }}>
+                    No pieces in this selection.
+                  </div>
                   : <div className="dw-grid">
-                      {visible.map(p => (
-                        <ProductCard
-                          key={p.id} product={p}
-                          wishlist={wishlist}
-                          onWishlist={toggleWishlist}
-                          onOpen={(prod: any) => setDetail(prod)}
-                        />
-                      ))}
-                    </div>
+                    {visible.map(p => (
+                      <ProductCard
+                        key={p.id} product={p}
+                        wishlist={wishlist}
+                        onWishlist={toggleWishlist}
+                        onOpen={(prod: any) => setDetail(prod)}
+                      />
+                    ))}
+                  </div>
                 }
               </>
 
-            /* ── Try-On Page ── */
+              /* ── Try-On Page ── */
             ) : page === "Try-On" ? (
               <TryOnPage />
 
-            /* ── Find Page ── */
+              /* ── Find Page ── */
             ) : page === "Find" ? (
               <FindPage
-                products={PRODUCTS}
+                products={products}
                 onOpen={(prod: any) => { setDetail(prod); setPage("Wardrobe"); }}
               />
             ) : null}
@@ -557,6 +571,16 @@ export default function Page() {
             ctaLabel="Proceed to Checkout"
           />
         )}
+
+        {/* UPLOAD MODAL */}
+        <UploadModal
+          isOpen={isUploadOpen}
+          onClose={() => setUploadOpen(false)}
+          onUpload={(newProduct: any) => {
+            setProducts([newProduct, ...products]);
+            showToast(`${newProduct.name} uploaded to archive`);
+          }}
+        />
 
         {/* TOAST */}
         {toast && <div className="dw-toast">{toast}</div>}

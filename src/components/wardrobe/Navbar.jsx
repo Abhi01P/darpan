@@ -1,6 +1,6 @@
 "use client";
 
-import { Ico } from "@/app/wardrobe/page";
+import { Ico } from "@/components/wardrobe/shared";
 
 const NAV_PAGES = ["Wardrobe", "Try-On", "Find"];
 
