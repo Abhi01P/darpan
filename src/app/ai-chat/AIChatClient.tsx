@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -11,7 +10,6 @@ import {
   ShoppingBag,
   Shirt,
   X,
-  ArrowLeft,
   ExternalLink,
   Palette,
   Wand2,
@@ -24,6 +22,7 @@ import type {
   ChatAPIResponse,
 } from "@/lib/types/ai-chat";
 import { Header } from "@/components/home/header";
+import Image from "next/image";
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -32,9 +31,6 @@ function generateId(): string {
 }
 
 const URL_REGEX = /https?:\/\/[^\s]+/gi;
-function containsUrl(text: string): boolean {
-  return URL_REGEX.test(text);
-}
 
 // ─── Suggestion Chips ───────────────────────────────────────
 
@@ -121,7 +117,7 @@ function ProductCard({
       <div className="flex flex-col sm:flex-row">
         {/* Product Image */}
         <div className="sm:w-36 h-40 sm:h-auto overflow-hidden relative flex-shrink-0">
-          <img
+          <Image
             src={product.imageUrl}
             alt={product.name}
             className="w-full h-full object-cover"
@@ -236,11 +232,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       <div className={`max-w-[85%] md:max-w-[75%] ${isUser ? "items-end" : "items-start"} flex flex-col`}>
         {/* Bubble */}
         <div
-          className={`rounded-2xl px-4 py-3 text-[13.5px] leading-relaxed whitespace-pre-wrap break-words ${
-            isUser
-              ? "bg-blue-600 text-white rounded-tr-sm shadow-lg shadow-blue-600/20"
-              : "bg-white/5 border border-white/10 text-white/80 rounded-tl-sm backdrop-blur-md"
-          }`}
+          className={`rounded-2xl px-4 py-3 text-[13.5px] leading-relaxed whitespace-pre-wrap break-words ${isUser
+            ? "bg-blue-600 text-white rounded-tr-sm shadow-lg shadow-blue-600/20"
+            : "bg-white/5 border border-white/10 text-white/80 rounded-tl-sm backdrop-blur-md"
+            }`}
         >
           {formatContent(message.content)}
         </div>
@@ -298,7 +293,7 @@ function UrlPreviewChip({ url, onRemove }: { url: string; onRemove: () => void }
 
 // ─── Main Chat Component ────────────────────────────────────
 
-export default function AIChatClient({ userEmail }: { userEmail: string }) {
+export default function AIChatClient() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -378,7 +373,7 @@ export default function AIChatClient({ userEmail }: { userEmail: string }) {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err) {
+    } catch {
       const errorMessage: ChatMessage = {
         id: generateId(),
         role: "assistant",

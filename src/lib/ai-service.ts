@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // ─── AI Service Abstraction Layer ───────────────────────────
 // Factory pattern: auto-selects MockAIService or RealAIService
 // based on whether OPENAI_API_KEY is present in environment.

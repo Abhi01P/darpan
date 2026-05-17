@@ -3,7 +3,6 @@
 import { User } from "@supabase/supabase-js";
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 
 interface ProfileClientProps {
   user: User;

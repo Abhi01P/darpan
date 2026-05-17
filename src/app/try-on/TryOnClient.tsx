@@ -6,12 +6,12 @@ import dynamic from "next/dynamic";
 
 const WearableAR = dynamic(() => import("@/components/wardrobe/WearableAR"), { ssr: false });
 
-export default function TryOnClient({ userEmail }: { userEmail: string }) {
+export default function TryOnClient() {
   const [url, setUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [inputType, setInputType] = useState<"url" | "upload">("url");
   const [mode, setMode] = useState("2D");
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [showReplicaPrompt, setShowReplicaPrompt] = useState(false);
   const [isAROpen, setIsAROpen] = useState(false);
@@ -50,7 +50,7 @@ export default function TryOnClient({ userEmail }: { userEmail: string }) {
 
   return (
     <div style={{ background: "var(--bg, #b8a8b0)", minHeight: "100vh", fontFamily: "'Jost', sans-serif", display: "flex", flexDirection: "column", position: "relative", overflow: isMenuOpen ? "hidden" : "auto" }}>
-      
+
       {/* HEADER */}
       <div style={{ background: "var(--nav-bg, #2a1f28)", padding: "0 32px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
         <Link href="/wardrobe" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontWeight: 600, letterSpacing: 4, color: "var(--text-inv, #e8dce0)", textTransform: "uppercase", textDecoration: "none" }}>
@@ -86,13 +86,13 @@ export default function TryOnClient({ userEmail }: { userEmail: string }) {
 
       {/* MAIN CONTENT (SPLIT LAYOUT) */}
       <div style={{ flex: 1, display: "flex", flexDirection: "row", flexWrap: "wrap" }}>
-        
+
         {/* LEFT COLUMN: AESTHETIC GRAPHIC */}
         <div style={{ flex: "1 1 400px", background: "url('https://images.unsplash.com/photo-1618932260643-ee4625b59a6e?auto=format&fit=crop&q=80&w=1000') center/cover", position: "relative", minHeight: "30vh" }}>
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.4), rgba(0,0,0,0.8))" }}></div>
           <div style={{ position: "absolute", bottom: 60, left: 60, color: "#fff", maxWidth: 400 }}>
             <div style={{ fontSize: 10, letterSpacing: 3, textTransform: "uppercase", color: "var(--pink-nav)", marginBottom: 16 }}>The Atelier</div>
-            <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 48, lineHeight: 1.1, marginBottom: 16, fontStyle: "italic", fontWeight: 300 }}>Virtual<br/>Proportions.</h1>
+            <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 48, lineHeight: 1.1, marginBottom: 16, fontStyle: "italic", fontWeight: 300 }}>Virtual<br />Proportions.</h1>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, fontWeight: 300 }}>Experience flawless digital tailoring. Paste a link or upload an image to map any garment instantly onto your bespoke digital replica.</p>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function TryOnClient({ userEmail }: { userEmail: string }) {
         {/* RIGHT COLUMN: COMPACT INTERFACE */}
         <div style={{ flex: "1 1 400px", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
           <div style={{ width: "100%", maxWidth: 420 }}>
-            
+
             {showReplicaPrompt && (
               <div style={{ background: "rgba(232, 64, 112, 0.05)", borderLeft: "3px solid var(--pink-nav)", padding: "16px 20px", marginBottom: 32, animation: "slide-down .3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
                 <h3 style={{ color: "var(--text, #1a1018)", fontSize: 14, marginBottom: 6 }}>Digital Replica Required</h3>
@@ -114,7 +114,7 @@ export default function TryOnClient({ userEmail }: { userEmail: string }) {
             )}
 
             <form onSubmit={handleTryOn} style={{ display: "flex", flexDirection: "column", gap: 40 }}>
-              
+
               {/* STEP 1 */}
               <div>
                 <div style={{ fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: "var(--pink-nav)", marginBottom: 12 }}>Step 1: Provide Garment</div>
@@ -202,9 +202,9 @@ export default function TryOnClient({ userEmail }: { userEmail: string }) {
 
       {/* AR ENGINE COMPONENT */}
       {isAROpen && (
-        <WearableAR 
-          modelUrl="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
-          onClose={() => setIsAROpen(false)} 
+        <WearableAR
+          modelUrl="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+          onClose={() => setIsAROpen(false)}
         />
       )}
 

@@ -18,5 +18,5 @@ export default async function AIChatPage() {
     redirect("/sign-in");
   }
 
-  return <AIChatClient userEmail={user.email || ""} />;
+  return <AIChatClient />;
 }

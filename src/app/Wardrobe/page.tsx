@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState } from "react";
 import Navbar from "@/components/wardrobe/Navbar";
@@ -9,7 +10,7 @@ import FindPage from "@/components/wardrobe/Findpage";
 import Footer from "@/components/wardrobe/Footer";
 
 import { UploadModal } from "@/components/wardrobe/UploadModal";
-import { SIDEBAR_CATS, Ico } from "@/components/wardrobe/shared";
+import Image from "next/image";
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap');
@@ -325,8 +326,6 @@ const PRODUCTS = [
 ];
 
 const FILTERS = ["All", "Curated", "New", "Saved"];
-const NAV_PAGES = ["Wardrobe", "Try-On", "Find"];
-
 
 /* ─── SIDE PANEL ─────────────────────────────────────────────── */
 function SidePanel({ title, items, onRemove, onClose, ctaLabel }: any) {
@@ -346,7 +345,7 @@ function SidePanel({ title, items, onRemove, onClose, ctaLabel }: any) {
               <div key={item.id} className="dw-panel-item">
                 <div className="dw-panel-item-img" style={{ background: item.color || "rgba(255,255,255,0.05)" }}>
                   {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <Image src={item.image_url} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     item.emoji
                   )}
@@ -419,11 +418,7 @@ export default function Page() {
   });
 
   /* Sidebar icon map */
-  const sidebarIcon = (cat: any) =>
-    cat === "Tops" || cat === "Accessories" ? "shirt"
-      : cat === "Bottoms" ? "scissors"
-        : cat === "Outerwear" ? "shirt"
-          : "grid";
+  
 
   return (
     <>
@@ -475,7 +470,7 @@ export default function Page() {
                 <div className="dw-content-header">
                   <div>
                     <div className="dw-section-eyebrow">A Study in Texture and Silhouette</div>
-                    <h1 className="dw-section-title">The Curator's Selection</h1>
+                    <h1 className="dw-section-title">The Curator&apos;s Selection</h1>
                     <p className="dw-section-desc">
                       Explore our modular archive designed for the modern atelier lifestyle,
                       where every piece is a foundational element.
