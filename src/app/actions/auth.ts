@@ -44,7 +44,7 @@ export async function loginWithGoogleAction(callbackUrl?: string) {
     // Need to get headers to build the absolute URL for the callback
     const { headers } = await import('next/headers')
     const headersList = await headers()
-    const host = headersList.get('host')
+    const host = headersList.get('host') || 'localhost:3000'
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
     const origin = `${protocol}://${host}`
 
@@ -73,7 +73,7 @@ export async function loginWithAzureAction(callbackUrl?: string) {
     // Need to get headers to build the absolute URL for the callback
     const { headers } = await import('next/headers')
     const headersList = await headers()
-    const host = headersList.get('host')
+    const host = headersList.get('host') || 'localhost:3000'
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
     const origin = `${protocol}://${host}`
 
