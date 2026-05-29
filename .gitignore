@@ -1,0 +1,41 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets & credentials — NEVER commit these
+.env
+.env.*
+key.json
+*.pem
+
+# Uploaded user content
+uploads/
+!uploads/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.antigravitycli/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Runtime artifacts
+celery.pid
+logs/
+.pids/
+*.log
+
+# Node (frontend)
+node_modules/
+.next/
