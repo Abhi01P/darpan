@@ -8,7 +8,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { AgentState } from "./types";
 import { searchLiveRetailer } from "../scraper";
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-3.5-flash";
 
 function hasGeminiKey(): boolean {
   return Boolean(process.env.GEMINI_API_KEY);

@@ -224,12 +224,12 @@ function UrlPreviewChip({ url, onRemove }: { url: string; onRemove: () => void }
 
 // ─── Main Chat Component ────────────────────────────────────
 
-export default function AIChatClient() {
+export default function AIChatClient({ initialGender, initialUserImageUrl }: { initialGender?: string, initialUserImageUrl?: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
-  const [userImageUrl, setUserImageUrl] = useState<string | null>(null);
+  const [userImageUrl, setUserImageUrl] = useState<string | null>(initialUserImageUrl || null);
   const router = useRouter();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -249,12 +249,37 @@ export default function AIChatClient() {
     }
   }, [inputValue]);
 
-  // Handle user photo upload for try-on context
+  // Handle user photo upload for try-on context (with client-side resize)
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
-    reader.onload = () => { setUserImageUrl(reader.result as string); };
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          setUserImageUrl(canvas.toDataURL("image/jpeg", 0.8));
+        } else {
+          setUserImageUrl(event.target?.result as string); // Fallback
+        }
+      };
+      img.src = event.target?.result as string;
+    };
     reader.readAsDataURL(file);
   };
 
@@ -293,7 +318,7 @@ export default function AIChatClient() {
     setMessages((prev) => [...prev, msg]);
   };
 
-  // Handle "Try On" from product card
+  // Handle "Try On" from product card (intercepted by Gatekeeper)
   const handleTryOn = async (item: RecommendedItemData) => {
     if (!userImageUrl) {
       // Prompt to upload photo first
@@ -306,46 +331,12 @@ export default function AIChatClient() {
       return;
     }
 
-    // Show a processing message
-    const processingMsg: ChatMessage = {
-      id: generateId(), role: "assistant",
-      content: `✨ Generating your virtual try-on with **${item.title}**... This may take a moment.`,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, processingMsg]);
-    setIsLoading(true);
-
-    try {
-      const res = await fetch("/api/try-on", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userImageUrl, garmentImageUrl: item.imageUrl }),
-      });
-      const data = await res.json();
-
-      const resultMsg: ChatMessage = {
-        id: generateId(), role: "assistant",
-        content: data.error
-          ? `I couldn't generate the try-on image: ${data.error}`
-          : `Here's how you'd look in the **${item.title}**! 🪞`,
-        timestamp: new Date(),
-        tryOnResultUrl: data.resultUrl || null,
-      };
-      setMessages((prev) => [...prev, resultMsg]);
-    } catch {
-      const errMsg: ChatMessage = {
-        id: generateId(), role: "assistant",
-        content: "Something went wrong while generating the try-on. Please try again.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errMsg]);
-    } finally {
-      setIsLoading(false);
-    }
+    // Send a message to the AI Chat API so it is processed by the pipeline and kept in history
+    await sendMessage(`I want to try on this item: ${item.title}`, item.imageUrl);
   };
 
   // Send message through the pipeline
-  const sendMessage = async (content?: string) => {
+  const sendMessage = async (content?: string, overrideGarmentImage?: string) => {
     const text = (content || inputValue).trim();
     if (!text || isLoading) return;
 
@@ -365,6 +356,9 @@ export default function AIChatClient() {
           messages: [...messages, userMessage].map((m) => ({ role: m.role, content: m.content })),
           context: {
             userImageUrl: userImageUrl || undefined,
+            garmentPageUrl: detectedUrls[0] || undefined,
+            garmentImageUrl: overrideGarmentImage || undefined,
+            userGender: initialGender as "male" | "female" | "non-binary" | undefined,
           },
         }),
       });

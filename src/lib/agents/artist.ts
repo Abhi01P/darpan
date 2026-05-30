@@ -19,6 +19,14 @@ function hasGeminiKey(): boolean {
 async function downloadImageAsBase64(
   url: string
 ): Promise<{ base64: string; mimeType: string }> {
+  // If it's already a Data URI, parse it directly to avoid fetch overhead
+  if (url.startsWith("data:")) {
+    const matches = url.match(/^data:([^;]+);base64,(.+)$/);
+    if (matches && matches.length === 3) {
+      return { mimeType: matches[1], base64: matches[2] };
+    }
+  }
+
   const response = await fetch(url, {
     signal: AbortSignal.timeout(15000),
   });

@@ -18,5 +18,11 @@ export default async function AIChatPage() {
     redirect("/sign-in");
   }
 
-  return <AIChatClient />;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("gender, replica_image_url")
+    .eq("id", user.id)
+    .single();
+
+  return <AIChatClient initialGender={profile?.gender} initialUserImageUrl={profile?.replica_image_url} />;
 }
