@@ -21,52 +21,39 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { url } = body;
 
-    if (!url || typeof url !== "string") {
+    if (!url) {
       return NextResponse.json(
-        { error: "A valid URL is required" },
+        { error: "URL is required." },
         { status: 400 }
       );
     }
 
-    // 3. Validate URL format
-    try {
-      new URL(url);
-    } catch {
-      return NextResponse.json(
-        { error: "Invalid URL format" },
-        { status: 400 }
-      );
-    }
-
-    // 4. Scrape the product page
+    // 3. Scrape the product page
+    console.log(`[Scrape API] Extracting product info from: ${url}`);
     const product = await extractProductInfo(url);
 
     if (!product) {
       return NextResponse.json(
-        { error: "Could not extract product info from this URL." },
+        {
+          error:
+            "Could not extract product information from this URL. The site may block scraping or lack Open Graph metadata.",
+        },
         { status: 422 }
       );
     }
 
     return NextResponse.json({
-      productData: {
-        name: product.title,
-        brand: "",
-        price: "",
-        material: "",
-        styleCategory: "",
-        sizingInfo: "",
-        imageUrl: product.imageUrl,
-        sourceUrl: url,
-        description: "",
-        colors: [],
-        occasions: [],
-      },
+      title: product.title,
+      imageUrl: product.imageUrl,
+      sourceUrl: url,
+      error: null,
     });
   } catch (error) {
-    console.error("[Analyze URL] Error:", error);
+    console.error("[Scrape API] Error:", error);
     return NextResponse.json(
-      { error: "Failed to analyze the URL. Please try again." },
+      {
+        error: "Failed to scrape product page. Please try again.",
+      },
       { status: 500 }
     );
   }

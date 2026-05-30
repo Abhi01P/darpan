@@ -1,6 +1,7 @@
 // ─── AI Chat Types ──────────────────────────────────────────
 // Shared types for the AI Chat feature.
 // Used by both the frontend client and backend API routes.
+// Updated for the DrapeNet 3-agent pipeline.
 
 export interface ChatMessage {
   id: string;
@@ -9,6 +10,9 @@ export interface ChatMessage {
   timestamp: Date;
   productData?: ProductAnalysis | null;
   suggestedActions?: SuggestedAction[];
+  recommendedItems?: RecommendedItemData[];
+  tryOnResultUrl?: string | null;
+  intentType?: string | null;
 }
 
 export interface ProductAnalysis {
@@ -28,6 +32,10 @@ export interface ProductAnalysis {
 export interface ChatContext {
   wardrobeItems?: WardrobeItem[];
   productUrl?: string;
+  userImageUrl?: string;
+  garmentImageUrl?: string;
+  garmentPageUrl?: string;
+  userGender?: "male" | "female" | "non-binary";
 }
 
 export interface WardrobeItem {
@@ -39,10 +47,19 @@ export interface WardrobeItem {
   desc?: string;
 }
 
+export interface RecommendedItemData {
+  itemId: string;
+  title: string;
+  imageUrl: string;
+}
+
 export interface AIResponse {
   reply: string;
   productData?: ProductAnalysis | null;
   suggestedActions?: SuggestedAction[];
+  recommendedItems?: RecommendedItemData[];
+  tryOnResultUrl?: string | null;
+  intentType?: string | null;
 }
 
 export interface SuggestedAction {
@@ -62,6 +79,9 @@ export interface ChatAPIResponse {
   reply: string;
   productData?: ProductAnalysis | null;
   suggestedActions?: SuggestedAction[];
+  recommendedItems?: RecommendedItemData[];
+  tryOnResultUrl?: string | null;
+  intentType?: string | null;
   error?: string;
 }
 
