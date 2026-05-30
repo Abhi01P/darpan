@@ -64,8 +64,9 @@ export async function runPipeline(
   }
 
   // ── Step 3: Artist (if user image + garment image available)
-  // Only run Artist if we have both images for try-on generation
-  if (state.userImageUrl && state.garmentImageUrl && state.intentType === "TRYON_SPECIFIC") {
+  // Python workflow: workflow.add_edge("stylist", "artist") — Artist always
+  // runs after Stylist. It skips internally if images aren't available.
+  if (state.userImageUrl && state.garmentImageUrl) {
     state = await runArtist(state);
   }
 

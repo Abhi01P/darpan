@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/wardrobe/Navbar";
 import { Sidebar } from "@/components/wardrobe/Sidebar";
 import { ProductCard } from "@/components/wardrobe/ProductCard";
@@ -451,6 +451,24 @@ export default function Page() {
   const [panel, setPanel] = useState<any>(null);  // "wishlist" | "bag" | null
   const [toast, setToast] = useState<any>(null);
   const [isUploadOpen, setUploadOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchItems() {
+      try {
+        const response = await fetch('/api/wardrobe/items');
+        if (response.ok) {
+          const data = await response.json();
+          setProducts(data.items || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch wardrobe items", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchItems();
+  }, []);
 
   const showToast = (msg: any) => { setToast(msg); setTimeout(() => setToast(null), 2400); };
 
@@ -470,6 +488,18 @@ export default function Page() {
       showToast(`${product.name} added to bag`);
       return [...prev, product];
     });
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/wardrobe/items/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error("Failed to delete");
+      setProducts(prev => prev.filter(p => p.id !== id));
+      showToast("Item deleted");
+    } catch (error) {
+      console.error(error);
+      alert("Could not delete item");
+    }
   };
 
   /* Filtered products for wardrobe grid */
@@ -578,8 +608,16 @@ export default function Page() {
                   </div>
                 </div>
 
-                {visible.length === 0
-                  ? <div style={{ color: "var(--muted)", fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 20, marginTop: 24 }}>
+                {isLoading ? (
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "200px", gridColumn: "1 / -1" }}>
+                    <div style={{ 
+                      width: "32px", height: "32px", borderRadius: "50%", 
+                      border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "var(--pink-nav)", 
+                      animation: "spin 1s linear infinite" 
+                    }}></div>
+                  </div>
+                ) : visible.length === 0
+                  ? <div style={{ color: "var(--muted)", fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 20, marginTop: 24, gridColumn: "1 / -1" }}>
                     No pieces in this selection.
                   </div>
                   : <div className="dw-grid">
@@ -589,6 +627,7 @@ export default function Page() {
                         wishlist={wishlist}
                         onWishlist={toggleWishlist}
                         onOpen={(prod: any) => setDetail(prod)}
+                        onDelete={handleDelete}
                       />
                     ))}
                   </div>

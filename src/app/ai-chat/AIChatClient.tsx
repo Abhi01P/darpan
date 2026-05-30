@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Send, Link2, Sparkles, Shirt, X,
   Palette, Wand2, MessageSquare, ImagePlus, ChevronLeft, ChevronRight,
-  Plus, ThumbsDown, Check,
+  Plus, ThumbsDown, Check, Star,
 } from "lucide-react";
 import type {
   ChatMessage, RecommendedItemData, ChatAPIResponse,
@@ -66,7 +66,18 @@ function ProductCardDeck({ items, onTryOn }: { items: RecommendedItemData[]; onT
           )}
         </div>
         <div className="p-4">
-          <h4 className="text-white font-semibold text-sm mb-3 line-clamp-2">{item.title}</h4>
+          <h4 className="text-white font-semibold text-sm mb-2 line-clamp-2">{item.title}</h4>
+          {(item.price || item.rating) && (
+            <div className="flex items-center gap-3 text-xs text-white/70 mb-3 font-medium">
+              {item.price && <span>₹{item.price.toLocaleString("en-IN")}</span>}
+              {item.rating && (
+                <span className="flex items-center gap-1">
+                  <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                  {item.rating.toFixed(1)}
+                </span>
+              )}
+            </div>
+          )}
           <div className="flex gap-2">
             <button onClick={() => onTryOn(item)}
               className="flex-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase px-3 py-2.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/30 transition-all">

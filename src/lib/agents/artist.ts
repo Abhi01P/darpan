@@ -6,7 +6,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { AgentState } from "./types";
 
-const TRYON_MODEL = "gemini-2.0-flash-exp";
+// Use the public SDK's image generation model
+// (Python uses gemini-2.5-flash-image via Vertex AI — this is the equivalent
+// available via the @google/generative-ai SDK with an API key)
+const TRYON_MODEL = "gemini-2.0-flash-preview-image-generation";
 
 function hasGeminiKey(): boolean {
   return Boolean(process.env.GEMINI_API_KEY);
@@ -80,7 +83,8 @@ function generateMockTryOn(garmentImageUrl: string): string {
 /**
  * Artist Agent — the pipeline's hands.
  *
- * When GEMINI_API_KEY is set: Uses Gemini's multimodal image generation.
+ * When GEMINI_API_KEY is set: Uses Gemini's multimodal image generation
+ * with responseModalities: ["IMAGE", "TEXT"] to generate virtual try-on.
  * When not set: Returns a styled garment preview SVG (no AI generation).
  */
 export async function runArtist(state: AgentState): Promise<AgentState> {
@@ -107,7 +111,16 @@ export async function runArtist(state: AgentState): Promise<AgentState> {
   // ── Gemini Mode ────────────────────────────────────────
   try {
     const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genai.getGenerativeModel({ model: TRYON_MODEL });
+    const model = genai.getGenerativeModel({
+      model: TRYON_MODEL,
+      // Request image output from the model — matches Python's
+      // config=types.GenerateContentConfig(response_modalities=["IMAGE"])
+      // The SDK types don't include responseModalities yet, so we cast.
+      generationConfig: {
+        responseModalities: ["IMAGE", "TEXT"],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+    });
 
     console.log("[Artist] Downloading source images...");
     const [personData, garmentData] = await Promise.all([
@@ -115,7 +128,7 @@ export async function runArtist(state: AgentState): Promise<AgentState> {
       downloadImageAsBase64(garmentImage),
     ]);
 
-    // The critical identity-preservation prompt from DrapeNet
+    // The critical identity-preservation prompt from DrapeNet's ml_pipeline.py
     const prompt = `You are an expert digital fashion editor. Look at the person in the first image, and look at the clothing item in the second image.
 
 Seamlessly change the outfit of the person in the first image so they are wearing the exact garment from the second image.

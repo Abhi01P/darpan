@@ -41,6 +41,8 @@ export interface RecommendedItem {
   title: string;
   imageUrl: string;
   pageContent?: string;
+  price?: string | number | Float32Array | null;
+  rating?: string | number | Float32Array | null;
 }
 
 // ─── Pipeline Result ────────────────────────────────────────

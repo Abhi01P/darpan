@@ -42,8 +42,9 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setUrlPreview({ title: data.title, imageUrl: data.imageUrl });
+      setUrlPreview({ title: data.title, imageUrl: data.imageUrl, price: data.price, rating: data.rating });
       if (!name && data.title) setName(data.title);
+      if (!price && data.price) setPrice(data.price.toString());
     } catch (err) {
       alert("Could not extract product info. " + (err instanceof Error ? err.message : ""));
     } finally {
@@ -71,13 +72,19 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
         formData.append("sizes", JSON.stringify(sizes.length ? sizes : ["M"]));
         // For URL mode, pass the image URL as a special field
         formData.append("imageUrl", urlPreview.imageUrl);
+        if (urlPreview.rating) {
+            formData.append("rating", urlPreview.rating);
+        }
 
         const response = await fetch('/api/wardrobe/generate', {
           method: 'POST',
           body: formData,
         });
 
-        if (!response.ok) throw new Error("Failed to add item");
+        if (!response.ok) {
+           const errData = await response.json().catch(() => null);
+           throw new Error(errData?.error || "Failed to add item");
+        }
         const result = await response.json();
 
         if (result.success && result.data) {
@@ -93,6 +100,7 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
             desc: desc || `Imported from ${new URL(productUrl).hostname}`,
             image_url: urlPreview.imageUrl,
             model_url: null,
+            rating: urlPreview.rating || null,
           });
         }
 
@@ -101,19 +109,7 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
         onClose();
       } catch (error) {
         console.error("Error submitting URL item", error);
-        // Still add locally for resilience
-        onUpload({
-          id: Date.now(),
-          name: name || "Imported Item",
-          tag: category,
-          price: price ? `₹${price}` : "—",
-          sizes: sizes.length ? sizes : ["M"],
-          desc: desc || "Imported from web",
-          image_url: urlPreview.imageUrl,
-          model_url: null,
-        });
-        resetForm();
-        onClose();
+        alert(error instanceof Error ? error.message : "Failed to add item");
       } finally {
         setIsUploading(false);
         setLoadingStatus("");
@@ -145,7 +141,10 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
           body: formData,
         });
 
-        if (!response.ok) throw new Error("Failed to generate model");
+        if (!response.ok) {
+           const errData = await response.json().catch(() => null);
+           throw new Error(errData?.error || "Failed to generate model");
+        }
 
         setLoadingStatus("Finalizing...");
         const result = await response.json();
@@ -160,7 +159,7 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
         onClose();
       } catch (error) {
         console.error("Error submitting form", error);
-        alert("Something went wrong during generation.");
+        alert(error instanceof Error ? error.message : "Something went wrong during generation.");
       } finally {
         setIsUploading(false);
         setLoadingStatus("");

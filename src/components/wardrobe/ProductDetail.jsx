@@ -27,7 +27,14 @@ export function ProductDetail({ product, wishlist, onWishlist, onAddBag, onBack 
           <div>
             <div className="dw-detail-tag">{product.tag}</div>
             <div className="dw-detail-name">{product.name}</div>
-            <div className="dw-detail-price">{product.price}</div>
+            <div className="dw-detail-price" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span>{product.price}</span>
+              {product.rating && (
+                <span style={{ fontSize: '14px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  ⭐ {Number(product.rating).toFixed(1)}
+                </span>
+              )}
+            </div>
           </div>
           <p className="dw-detail-desc">{product.desc}</p>
           <div className="dw-detail-divider" />

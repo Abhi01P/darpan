@@ -45,6 +45,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       title: product.title,
       imageUrl: product.imageUrl,
+      price: product.price,
+      rating: product.rating,
       sourceUrl: url,
       error: null,
     });

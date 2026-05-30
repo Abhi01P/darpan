@@ -3,6 +3,14 @@
 // Used by both the frontend client and backend API routes.
 // Updated for the DrapeNet 3-agent pipeline.
 
+// ─── Price Comparison (from Google Lens) ────────────────────
+
+export interface PriceComparison {
+  retailer: string;
+  price: number | null;
+  url: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
@@ -27,6 +35,7 @@ export interface ProductAnalysis {
   description: string;
   colors: string[];
   occasions: string[];
+  priceComparisons?: PriceComparison[];
 }
 
 export interface ChatContext {
@@ -45,12 +54,15 @@ export interface WardrobeItem {
   price: string;
   image_url: string;
   desc?: string;
+  rating?: number;
 }
 
 export interface RecommendedItemData {
   itemId: string;
   title: string;
   imageUrl: string;
+  price?: number;
+  rating?: number;
 }
 
 export interface AIResponse {
@@ -82,6 +94,7 @@ export interface ChatAPIResponse {
   recommendedItems?: RecommendedItemData[];
   tryOnResultUrl?: string | null;
   intentType?: string | null;
+  priceComparisons?: PriceComparison[];
   error?: string;
 }
 

@@ -4,45 +4,86 @@ import { createClient } from "@/utils/supabase/server";
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
-    
+
     // 1. Extract Garment Data
     const name = formData.get("name") as string;
     const category = formData.get("category") as string;
     const price = formData.get("price") as string;
     const desc = formData.get("desc") as string;
+    const ratingStr = formData.get("rating") as string;
+    const rating = ratingStr ? parseFloat(ratingStr) : null;
     const sizesStr = formData.get("sizes") as string;
     const sizes = sizesStr ? JSON.parse(sizesStr) : ["M"];
 
-    // 2. Extract Multiple Source Images
+    const providedImageUrl = formData.get("imageUrl") as string;
     const files = formData.getAll("images") as File[];
-    
-    if (!files || files.length === 0) {
-      return NextResponse.json({ error: "No source images provided" }, { status: 400 });
+
+    if ((!files || files.length === 0) && !providedImageUrl) {
+      return NextResponse.json({ error: "No source images or image URL provided" }, { status: 400 });
     }
 
-    // In a real scenario, we would upload `files` to a private bucket here
-    // and then call the Meshy API:
-    // await fetch('https://api.meshy.ai/v2/image-to-3d', { ... })
-
-    // 3. Simulate API Latency (Mocking the AI Generation process)
-    // Wait for 3 seconds to simulate "Processing..."
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    // 4. Mock the API Response Output
-    const mockImage2D = "https://images.unsplash.com/photo-1620799140188-3b2a02fd9a77?auto=format&fit=crop&q=80&w=400"; 
-    const mockModel3D = "https://modelviewer.dev/shared-assets/models/Astronaut.glb"; // Sample GLB file
-
-    // 5. Insert into Supabase DB
     const supabase = await createClient();
-    
+    let finalImageUrl = '';
+    const bucketName = 'wardrobe-images';
+
+    try {
+      if (files && files.length > 0) {
+        // Upload first file
+        const file = files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from(bucketName)
+          .upload(fileName, file, { contentType: file.type });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(fileName);
+
+        finalImageUrl = publicUrl;
+      } else if (providedImageUrl) {
+        // Fetch URL and upload
+        const imgResponse = await fetch(providedImageUrl);
+        if (!imgResponse.ok) throw new Error("Failed to fetch provided image URL");
+
+        const blob = await imgResponse.blob();
+        // Try to guess extension from content type or URL
+        let ext = 'jpg';
+        if (blob.type === 'image/png') ext = 'png';
+        else if (blob.type === 'image/webp') ext = 'webp';
+
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from(bucketName)
+          .upload(fileName, blob, { contentType: blob.type });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(fileName);
+
+        finalImageUrl = publicUrl;
+      }
+    } catch (uploadErr) {
+      console.error("Image upload failed:", uploadErr);
+      // Fallback to provided URL directly if bucket upload fails, or mock image
+      finalImageUrl = providedImageUrl || finalImageUrl;
+    }
+
+
     const productData = {
       name,
       tag: category,
       price: `₹${price}`,
       sizes,
       desc,
-      image_url: mockImage2D,
-      model_url: mockModel3D,
+      image_url: finalImageUrl,
+      rating,
     };
 
     const { data, error } = await supabase
@@ -52,8 +93,7 @@ export async function POST(req: Request) {
 
     if (error) {
       console.error("Database insert failed: ", error);
-      // Return mocked data even if DB insert fails for prototype resilience
-      return NextResponse.json({ success: true, data: { id: Date.now(), ...productData } });
+      return NextResponse.json({ error: `Database insert failed: ${error.message}` }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, data: data[0] });
