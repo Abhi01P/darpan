@@ -4,13 +4,15 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Send, Link2, Sparkles, Shirt, X, ExternalLink,
+  Send, Link2, Sparkles, Shirt, X,
   Palette, Wand2, MessageSquare, ImagePlus, ChevronLeft, ChevronRight,
+  Plus, ThumbsDown, Check,
 } from "lucide-react";
 import type {
   ChatMessage, RecommendedItemData, ChatAPIResponse,
 } from "@/lib/types/ai-chat";
-import { Header } from "@/components/home/header";
+import Navbar from "@/components/wardrobe/Navbar";
+import "@/styles/darpan-nav.css";
 import Image from "next/image";
 
 function generateId(): string {
@@ -91,7 +93,22 @@ function ProductCardDeck({ items, onTryOn }: { items: RecommendedItemData[]; onT
 
 // ─── Try-On Result Display ──────────────────────────────────
 
-function TryOnResult({ imageUrl }: { imageUrl: string }) {
+function TryOnResult({ imageUrl, onAddToWardrobe, onNotHelpful }: {
+  imageUrl: string;
+  onAddToWardrobe: (imageUrl: string) => void;
+  onNotHelpful: (imageUrl: string) => void;
+}) {
+  const [wardrobeStatus, setWardrobeStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-[12px] text-white/40 max-w-sm">
+        Result dismissed. Try another garment!
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mt-3 w-full max-w-sm">
       <div className="bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-xl overflow-hidden">
@@ -103,6 +120,36 @@ function TryOnResult({ imageUrl }: { imageUrl: string }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imageUrl} alt="Virtual try-on result" className="w-full h-full object-contain" />
         </div>
+        {/* Action buttons */}
+        <div className="flex gap-2 p-3 border-t border-white/5">
+          <button
+            onClick={async () => {
+              setWardrobeStatus("saving");
+              await onAddToWardrobe(imageUrl);
+              setWardrobeStatus("saved");
+            }}
+            disabled={wardrobeStatus !== "idle"}
+            className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase px-3 py-2.5 rounded-lg transition-all ${
+              wardrobeStatus === "saved"
+                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                : wardrobeStatus === "saving"
+                ? "bg-white/5 text-white/30 border border-white/10 cursor-wait"
+                : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/30"
+            }`}
+          >
+            {wardrobeStatus === "saved" ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+            {wardrobeStatus === "saved" ? "Added!" : wardrobeStatus === "saving" ? "Saving..." : "Add to Wardrobe"}
+          </button>
+          <button
+            onClick={() => {
+              onNotHelpful(imageUrl);
+              setDismissed(true);
+            }}
+            className="flex items-center justify-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase px-3 py-2.5 rounded-lg bg-white/5 text-white/40 border border-white/10 hover:bg-red-500/10 hover:text-red-300 hover:border-red-500/20 transition-all"
+          >
+            <ThumbsDown className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </motion.div>
   );
@@ -110,7 +157,12 @@ function TryOnResult({ imageUrl }: { imageUrl: string }) {
 
 // ─── Message Bubble ─────────────────────────────────────────
 
-function MessageBubble({ message, onTryOn }: { message: ChatMessage; onTryOn: (item: RecommendedItemData) => void }) {
+function MessageBubble({ message, onTryOn, onAddToWardrobe, onNotHelpful }: {
+  message: ChatMessage;
+  onTryOn: (item: RecommendedItemData) => void;
+  onAddToWardrobe: (imageUrl: string) => void;
+  onNotHelpful: (imageUrl: string) => void;
+}) {
   const isUser = message.role === "user";
 
   function formatContent(content: string) {
@@ -142,7 +194,7 @@ function MessageBubble({ message, onTryOn }: { message: ChatMessage; onTryOn: (i
         )}
 
         {!isUser && message.tryOnResultUrl && (
-          <TryOnResult imageUrl={message.tryOnResultUrl} />
+          <TryOnResult imageUrl={message.tryOnResultUrl} onAddToWardrobe={onAddToWardrobe} onNotHelpful={onNotHelpful} />
         )}
 
         <span className="text-[10px] text-white/20 mt-1.5 px-1">
@@ -204,6 +256,41 @@ export default function AIChatClient() {
     const reader = new FileReader();
     reader.onload = () => { setUserImageUrl(reader.result as string); };
     reader.readAsDataURL(file);
+  };
+
+  // Handle "Add to Wardrobe" from try-on result
+  const handleAddToWardrobe = async (imageUrl: string) => {
+    try {
+      const res = await fetch("/api/wardrobe/add-tryon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl, title: "AI Try-On Look" }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        console.warn("Failed to add to wardrobe:", data.error);
+      } else {
+        const msg: ChatMessage = {
+          id: generateId(), role: "assistant",
+          content: "\u2705 Saved to your wardrobe! You can find it in your collection.",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, msg]);
+      }
+    } catch {
+      console.error("Failed to add to wardrobe");
+    }
+  };
+
+  // Handle "Not Helpful" feedback
+  const handleNotHelpful = (imageUrl: string) => {
+    console.log("[Feedback] Not helpful:", imageUrl.slice(0, 50));
+    const msg: ChatMessage = {
+      id: generateId(), role: "assistant",
+      content: "Got it, I'll try to do better next time! \ud83d\ude4f Would you like to try a different garment?",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, msg]);
   };
 
   // Handle "Try On" from product card
@@ -315,8 +402,8 @@ export default function AIChatClient() {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Header />
+    <div className="dw-root min-h-screen flex flex-col" style={{ background: "var(--bg, #b8a8b0)", fontFamily: "'Jost', sans-serif" }}>
+      <Navbar activePage="AI Chat" />
       <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto relative">
         <div className="flex-1 overflow-y-auto py-6 space-y-5">
           {isEmpty ? (
@@ -354,7 +441,7 @@ export default function AIChatClient() {
           ) : (
             <>
               {messages.map((msg) => (
-                <MessageBubble key={msg.id} message={msg} onTryOn={handleTryOn} />
+                <MessageBubble key={msg.id} message={msg} onTryOn={handleTryOn} onAddToWardrobe={handleAddToWardrobe} onNotHelpful={handleNotHelpful} />
               ))}
               <AnimatePresence>{isLoading && <TypingIndicator />}</AnimatePresence>
             </>

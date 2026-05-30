@@ -1,0 +1,123 @@
+/* ─── Shared Darpan Nav Variables & Styles ──────────────── */
+/* Used by all pages that render the shared Navbar component */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:         #b8a8b0;
+  --surface:    #c4b4bc;
+  --nav-bg:     #2a1f28;
+  --sidebar-bg: #1e1620;
+  --card-bg:    #d8ccd4;
+  --text:       #1a1018;
+  --text-inv:   #e8dce0;
+  --muted:      #6a5860;
+  --pink-nav:   #e8a0b0;
+  --border:     rgba(255,255,255,0.12);
+  --radius:     4px;
+}
+
+/* TOP NAV */
+.dw-topnav {
+  background: var(--nav-bg);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 44px; flex-shrink: 0;
+  position: sticky; top: 0; z-index: 200;
+}
+.dw-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px; font-weight: 600; letter-spacing: 3px;
+  color: var(--text-inv); text-transform: uppercase; cursor: pointer; user-select: none;
+}
+.dw-nav-links { display: flex; align-items: center; }
+.dw-nav-link {
+  font-size: 10px; font-weight: 500; letter-spacing: 1.2px;
+  text-transform: uppercase; color: rgba(232,220,224,0.55);
+  padding: 0 14px; height: 44px; display: flex; align-items: center;
+  cursor: pointer; transition: color .2s; border-bottom: 2px solid transparent; user-select: none;
+}
+.dw-nav-link:hover { color: var(--text-inv); }
+.dw-nav-link.active { color: var(--pink-nav); border-bottom-color: var(--pink-nav); }
+.dw-nav-icons { display: flex; align-items: center; gap: 14px; color: rgba(232,220,224,0.6); }
+.dw-nav-icon {
+  cursor: pointer; transition: color .2s; display: flex; align-items: center; position: relative;
+}
+.dw-nav-icon:hover { color: var(--text-inv); }
+.dw-nav-icon svg { width: 16px; height: 16px; }
+.dw-badge {
+  position: absolute; top: -6px; right: -6px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--pink-nav); color: var(--nav-bg);
+  font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+
+/* HAMBURGER */
+.dw-hamburger {
+  display: none;
+  flex-direction: column; gap: 4px;
+  background: none; border: none; cursor: pointer; padding: 4px;
+}
+.dw-hamburger span {
+  display: block; width: 20px; height: 1.5px; background: var(--text-inv);
+  transition: all .2s;
+}
+.dw-hamburger span:nth-child(3) { width: 14px; }
+
+/* SIDE DRAWER */
+.dw-drawer-overlay {
+  position: fixed; inset: 0;
+  background: rgba(18,10,16,.5); z-index: 9998;
+  animation: dw-fade-in .2s;
+}
+@keyframes dw-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dw-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.dw-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 260px; max-width: 80vw;
+  background: var(--sidebar-bg); z-index: 9999;
+  display: flex; flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,.4);
+  animation: dw-slide-in .25s cubic-bezier(.3,0,.2,1);
+  padding-bottom: 20px;
+}
+.dw-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px; height: 44px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.dw-drawer-close {
+  background: none; border: none; color: var(--text-inv);
+  font-size: 26px; font-weight: 300; cursor: pointer; padding: 4px 8px;
+  transition: color .15s;
+}
+.dw-drawer-close:hover { color: var(--pink-nav); }
+.dw-drawer-section {
+  padding: 16px 18px 6px; font-size: 7.5px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: rgba(232,220,224,0.28); font-weight: 600;
+}
+.dw-drawer-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px; font-size: 13px; letter-spacing: .6px;
+  color: rgba(232,220,224,0.55); cursor: pointer;
+  transition: color .15s, background .15s;
+  text-decoration: none; user-select: none;
+}
+.dw-drawer-item:hover { color: var(--text-inv); background: rgba(255,255,255,.04); }
+.dw-drawer-item.active {
+  color: var(--pink-nav);
+  border-left: 2px solid var(--pink-nav); padding-left: 16px;
+}
+.dw-drawer-divider { height: 1px; background: var(--border); margin: 8px 18px; }
+
+/* VISIBILITY */
+.dw-desktop-only { display: flex; }
+.dw-mobile-only { display: none; }
+
+@media(max-width:880px) {
+  .dw-nav-links .dw-nav-link { padding: 0 10px; font-size: 9px; }
+}
+@media(max-width:680px) {
+  .dw-desktop-only { display: none !important; }
+  .dw-mobile-only { display: flex !important; }
+  .dw-hamburger { display: flex; }
+}

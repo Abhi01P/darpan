@@ -44,8 +44,14 @@ export function Hero() {
 
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full">
-                        <Button className="rounded-full px-8 py-6 bg-white/10 hover:bg-white/5 text-white font-semibold text-[16px] flex items-center justify-center group/btn shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all">
+                        <Button className="rounded-full px-8 py-6 bg-white/10 hover:bg-white/5 text-white font-semibold text-[16px] flex items-center justify-center group/btn shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all"
+                            onClick={() => window.location.href = "/try-on"}>
                             Start Trying On
+                            <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1.5 transition-transform" />
+                        </Button>
+                        <Button className="rounded-full px-8 py-6 bg-white/10 hover:bg-white/5 text-white font-semibold text-[16px] flex items-center justify-center group/btn shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all"
+                            onClick={() => window.location.href = "/ai-chat"}>
+                            Chat with AI
                             <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1.5 transition-transform" />
                         </Button>
                     </div>

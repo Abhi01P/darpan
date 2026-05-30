@@ -8,6 +8,9 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
   const [sizes, setSizes] = useState([]);
 
   const [sourceFiles, setSourceFiles] = useState([]);
+  const [inputMode, setInputMode] = useState("file"); // "file" | "link"
+  const [productUrl, setProductUrl] = useState("");
+  const [urlPreview, setUrlPreview] = useState(null); // { title, imageUrl }
   const [isUploading, setIsUploading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("");
 
@@ -27,66 +30,171 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!name || !price || !desc) return alert("Please fill all required fields.");
-    if (sourceFiles.length === 0) return alert("Please upload at least 1 image.");
-
+  const handleFetchUrl = async () => {
+    if (!productUrl) return alert("Please enter a product URL.");
+    setLoadingStatus("Extracting product info...");
     setIsUploading(true);
-
     try {
-      setLoadingStatus("Uploading raw images...");
-
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("category", category);
-      formData.append("price", price);
-      formData.append("desc", desc);
-      formData.append("sizes", JSON.stringify(sizes.length ? sizes : ["M"]));
-
-      sourceFiles.forEach((file) => {
-        formData.append("images", file);
+      const res = await fetch("/api/scrape-product", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: productUrl }),
       });
-
-      // Simulate a small delay before updating status
-      await new Promise(r => setTimeout(r, 800));
-      setLoadingStatus("Generating 3D model via Meshy AI...");
-
-      const response = await fetch('/api/wardrobe/generate', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate model");
-      }
-
-      setLoadingStatus("Finalizing...");
-      const result = await response.json();
-
-      // Update local state to reflect UI instantly
-      if (result.success && result.data) {
-        onUpload(result.data);
-      } else {
-        throw new Error("Invalid response");
-      }
-
-      // Reset form
-      setName("");
-      setCategory("TOPS");
-      setPrice("");
-      setDesc("");
-      setSizes([]);
-      setSourceFiles([]);
-      onClose();
-    } catch (error) {
-      console.error("Error submitting form", error);
-      alert("Something went wrong during generation.");
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setUrlPreview({ title: data.title, imageUrl: data.imageUrl });
+      if (!name && data.title) setName(data.title);
+    } catch (err) {
+      alert("Could not extract product info. " + (err instanceof Error ? err.message : ""));
     } finally {
       setIsUploading(false);
       setLoadingStatus("");
     }
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (inputMode === "link") {
+      // URL-based upload
+      if (!urlPreview?.imageUrl) return alert("Please fetch a product link first.");
+      if (!name) return alert("Please provide a garment name.");
+
+      setIsUploading(true);
+      try {
+        setLoadingStatus("Uploading to wardrobe...");
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("category", category);
+        formData.append("price", price || "0");
+        formData.append("desc", desc || `Imported from ${new URL(productUrl).hostname}`);
+        formData.append("sizes", JSON.stringify(sizes.length ? sizes : ["M"]));
+        // For URL mode, pass the image URL as a special field
+        formData.append("imageUrl", urlPreview.imageUrl);
+
+        const response = await fetch('/api/wardrobe/generate', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) throw new Error("Failed to add item");
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          onUpload({ ...result.data, image_url: urlPreview.imageUrl });
+        } else {
+          // Fallback: create local item
+          onUpload({
+            id: Date.now(),
+            name,
+            tag: category,
+            price: price ? `₹${price}` : "—",
+            sizes: sizes.length ? sizes : ["M"],
+            desc: desc || `Imported from ${new URL(productUrl).hostname}`,
+            image_url: urlPreview.imageUrl,
+            model_url: null,
+          });
+        }
+
+        // Reset
+        resetForm();
+        onClose();
+      } catch (error) {
+        console.error("Error submitting URL item", error);
+        // Still add locally for resilience
+        onUpload({
+          id: Date.now(),
+          name: name || "Imported Item",
+          tag: category,
+          price: price ? `₹${price}` : "—",
+          sizes: sizes.length ? sizes : ["M"],
+          desc: desc || "Imported from web",
+          image_url: urlPreview.imageUrl,
+          model_url: null,
+        });
+        resetForm();
+        onClose();
+      } finally {
+        setIsUploading(false);
+        setLoadingStatus("");
+      }
+    } else {
+      // File-based upload (existing flow)
+      if (!name || !price || !desc) return alert("Please fill all required fields.");
+      if (sourceFiles.length === 0) return alert("Please upload at least 1 image.");
+
+      setIsUploading(true);
+      try {
+        setLoadingStatus("Uploading raw images...");
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("category", category);
+        formData.append("price", price);
+        formData.append("desc", desc);
+        formData.append("sizes", JSON.stringify(sizes.length ? sizes : ["M"]));
+
+        sourceFiles.forEach((file) => {
+          formData.append("images", file);
+        });
+
+        await new Promise(r => setTimeout(r, 800));
+        setLoadingStatus("Generating 3D model via Meshy AI...");
+
+        const response = await fetch('/api/wardrobe/generate', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) throw new Error("Failed to generate model");
+
+        setLoadingStatus("Finalizing...");
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          onUpload(result.data);
+        } else {
+          throw new Error("Invalid response");
+        }
+
+        resetForm();
+        onClose();
+      } catch (error) {
+        console.error("Error submitting form", error);
+        alert("Something went wrong during generation.");
+      } finally {
+        setIsUploading(false);
+        setLoadingStatus("");
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setName("");
+    setCategory("TOPS");
+    setPrice("");
+    setDesc("");
+    setSizes([]);
+    setSourceFiles([]);
+    setProductUrl("");
+    setUrlPreview(null);
+    setInputMode("file");
+  };
+
+  const tabStyle = (active) => ({
+    flex: 1,
+    padding: "10px 0",
+    cursor: "pointer",
+    fontSize: 11,
+    fontWeight: active ? 700 : 400,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    background: active ? "rgba(232,160,176,0.12)" : "transparent",
+    color: active ? "var(--pink-nav)" : "rgba(255,255,255,0.35)",
+    border: "none",
+    borderBottom: active ? "2px solid var(--pink-nav)" : "2px solid transparent",
+    fontFamily: "'Jost', sans-serif",
+    transition: "all .2s",
+  });
 
   return (
     <>
@@ -111,15 +219,125 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
           animation: "fade-in .2s ease-out",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24, alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20, alignItems: "center" }}>
           <div>
-            <div style={{ fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: "var(--pink-nav)", marginBottom: 4 }}>Meshy AI Generative Upload</div>
-            <div className="dw-panel-title" style={{ fontSize: 26 }}>Add to Wardrobe</div>
+            <div style={{ fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: "var(--pink-nav)", marginBottom: 4 }}>Add to Wardrobe</div>
+            <div className="dw-panel-title" style={{ fontSize: 26 }}>Upload Item</div>
           </div>
           <button className="dw-panel-close" onClick={onClose} style={{ alignSelf: "flex-start" }} disabled={isUploading}>×</button>
         </div>
 
+        {/* TAB TOGGLE: File / Link */}
+        <div style={{ display: "flex", marginBottom: 20, borderRadius: 6, overflow: "hidden", border: "1px solid var(--border)" }}>
+          <button type="button" style={tabStyle(inputMode === "file")} onClick={() => setInputMode("file")}>
+            📸 Upload Photo
+          </button>
+          <button type="button" style={tabStyle(inputMode === "link")} onClick={() => setInputMode("link")}>
+            🔗 Paste Link
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+          {/* LINK MODE: URL input + preview */}
+          {inputMode === "link" && (
+            <div>
+              <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--muted)" }}>Product URL</label>
+              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                <input
+                  type="url"
+                  value={productUrl}
+                  onChange={(e) => setProductUrl(e.target.value)}
+                  placeholder="https://www.zara.com/product/..."
+                  disabled={isUploading}
+                  style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", color: "#fff", borderRadius: 6 }}
+                />
+                <button
+                  type="button"
+                  onClick={handleFetchUrl}
+                  disabled={isUploading || !productUrl}
+                  style={{
+                    padding: "12px 16px",
+                    background: "var(--pink-nav)",
+                    color: "var(--nav-bg)",
+                    border: "none",
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: 0.8,
+                    cursor: "pointer",
+                    fontFamily: "'Jost', sans-serif",
+                    whiteSpace: "nowrap",
+                    opacity: isUploading || !productUrl ? 0.5 : 1,
+                  }}
+                >
+                  Fetch
+                </button>
+              </div>
+
+              {/* URL Preview */}
+              {urlPreview && (
+                <div style={{
+                  marginTop: 12, display: "flex", gap: 12, padding: 12,
+                  background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 8
+                }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={urlPreview.imageUrl} alt="Preview"
+                    style={{ width: 80, height: 100, objectFit: "cover", borderRadius: 4, background: "#111" }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: "var(--text-inv)", lineHeight: 1.4, marginBottom: 6 }}>
+                      {urlPreview.title?.slice(0, 80) || "Product"}
+                    </div>
+                    <div style={{ fontSize: 10, color: "var(--pink-nav)" }}>✓ Image extracted</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* FILE MODE: Image upload */}
+          {inputMode === "file" && (
+            <div>
+              <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--muted)", display: "flex", justifyContent: "space-between" }}>
+                <span>Source Images (Multiple)</span>
+                <span style={{ color: "var(--pink-nav)" }}>{sourceFiles.length} selected</span>
+              </label>
+              <div style={{
+                marginTop: 6,
+                border: "1px dashed var(--border)",
+                borderRadius: 6,
+                padding: "20px",
+                textAlign: "center",
+                background: sourceFiles.length > 0 ? "rgba(232,160,176,0.03)" : "rgba(255,255,255,0.01)",
+                position: "relative"
+              }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileChange}
+                  disabled={isUploading}
+                  style={{
+                    position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer"
+                  }}
+                />
+                <div style={{ pointerEvents: "none" }}>
+                  <div style={{ fontSize: 24, marginBottom: 8 }}>📸</div>
+                  <div style={{ fontSize: 13, color: "var(--text-inv)" }}>
+                    {sourceFiles.length > 0
+                      ? sourceFiles.map(f => f.name).join(", ")
+                      : "Drag & drop or click to upload photos"
+                    }
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>Provide 3-5 angles for best 3D results</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* COMMON FIELDS */}
           <div>
             <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--muted)" }}>Garment Name</label>
             <input
@@ -154,38 +372,6 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
                 disabled={isUploading}
                 style={{ width: "100%", padding: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", color: "#fff", marginTop: 6, borderRadius: 6 }}
               />
-            </div>
-          </div>
-
-          <div>
-            <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--muted)", display: "flex", justifyContent: "space-between" }}>
-              <span>Source Images (Multiple)</span>
-              <span style={{ color: "var(--pink-nav)" }}>{sourceFiles.length} selected</span>
-            </label>
-            <div style={{
-              marginTop: 6,
-              border: "1px dashed var(--border)",
-              borderRadius: 6,
-              padding: "20px",
-              textAlign: "center",
-              background: "rgba(255,255,255,0.01)",
-              position: "relative"
-            }}>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileChange}
-                disabled={isUploading}
-                style={{
-                  position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer"
-                }}
-              />
-              <div style={{ pointerEvents: "none" }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>📸</div>
-                <div style={{ fontSize: 13, color: "var(--text-inv)" }}>Drag & drop or click to upload photos</div>
-                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>Provide 3-5 angles for best 3D results</div>
-              </div>
             </div>
           </div>
 
@@ -241,7 +427,7 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
                 <span className="spinner" style={{ width: 14, height: 14, border: "2px solid var(--nav-bg)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }}></span>
                 {loadingStatus}
               </>
-            ) : "Generate 3D & Upload"}
+            ) : inputMode === "link" ? "Add to Wardrobe" : "Generate 3D & Upload"}
           </button>
         </form>
         <style>{`

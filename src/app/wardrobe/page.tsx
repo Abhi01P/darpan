@@ -5,7 +5,7 @@ import Navbar from "@/components/wardrobe/Navbar";
 import { Sidebar } from "@/components/wardrobe/Sidebar";
 import { ProductCard } from "@/components/wardrobe/ProductCard";
 import { ProductDetail } from "@/components/wardrobe/ProductDetail";
-import TryOnPage from "@/components/wardrobe/TryOnPage";
+
 import FindPage from "@/components/wardrobe/Findpage";
 import Footer from "@/components/wardrobe/Footer";
 
@@ -307,23 +307,89 @@ const CSS = `
 .dw-footer-link { font-size:9px; letter-spacing:.8px; text-transform:uppercase; color:rgba(232,220,224,0.35); cursor:pointer; transition:color .15s; }
 .dw-footer-link:hover { color:var(--text-inv); }
 
+/* HAMBURGER BUTTON */
+.dw-hamburger {
+  display: none;
+  flex-direction: column; gap: 4px;
+  background: none; border: none; cursor: pointer; padding: 4px;
+}
+.dw-hamburger span {
+  display: block; width: 20px; height: 1.5px; background: var(--text-inv);
+  transition: all .2s;
+}
+.dw-hamburger span:nth-child(3) { width: 14px; }
+
+/* SIDE DRAWER */
+.dw-drawer-overlay {
+  position: fixed; inset: 0;
+  background: rgba(18,10,16,.5); z-index: 9998;
+  animation: fade-in .2s;
+}
+.dw-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 260px; max-width: 80vw;
+  background: var(--sidebar-bg); z-index: 9999;
+  display: flex; flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,.4);
+  animation: slide-in .25s cubic-bezier(.3,0,.2,1);
+  padding-bottom: 20px;
+}
+.dw-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px; height: 44px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.dw-drawer-close {
+  background: none; border: none; color: var(--text-inv);
+  font-size: 26px; font-weight: 300; cursor: pointer; padding: 4px 8px;
+  transition: color .15s;
+}
+.dw-drawer-close:hover { color: var(--pink-nav); }
+.dw-drawer-section {
+  padding: 16px 18px 6px; font-size: 7.5px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: rgba(232,220,224,0.28); font-weight: 600;
+}
+.dw-drawer-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px; font-size: 13px; letter-spacing: .6px;
+  color: rgba(232,220,224,0.55); cursor: pointer;
+  transition: color .15s, background .15s;
+  text-decoration: none; user-select: none;
+}
+.dw-drawer-item:hover { color: var(--text-inv); background: rgba(255,255,255,.04); }
+.dw-drawer-item.active {
+  color: var(--pink-nav);
+  border-left: 2px solid var(--pink-nav); padding-left: 16px;
+}
+.dw-drawer-divider { height: 1px; background: var(--border); margin: 8px 18px; }
+
+/* VISIBILITY UTILITIES */
+.dw-desktop-only { display: flex; }
+.dw-mobile-only { display: none; }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────── */
+@media(max-width:880px){
+  .dw-nav-links .dw-nav-link { padding: 0 10px; font-size: 9px; }
+}
 @media(max-width:680px){
   .dw-body{grid-template-columns:1fr}
   .dw-sidebar{display:none}
   .dw-grid{grid-template-columns:repeat(2,1fr)}
   .dw-detail{grid-template-columns:1fr}
+  .dw-main { padding: 20px 16px; }
+  .dw-content-header { flex-direction: column; }
+  .dw-header-right { flex-wrap: wrap; }
+  .dw-desktop-only { display: none !important; }
+  .dw-mobile-only { display: flex !important; }
+  .dw-hamburger { display: flex; }
+}
+@media(max-width:400px){
+  .dw-grid{grid-template-columns:1fr}
 }
 `;
 
 /* ─── PRODUCTS DATA ──────────────────────────────────────────── */
-const PRODUCTS = [
-  { id: 1, tag: "TOPS", name: "Sculpted Silk Tunic", image_url: "https://images.unsplash.com/photo-1596755094514-f87e32f85e2c?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹4,800", sizes: ["XS", "S", "M", "L"], desc: "A fluid silk tunic cut with architectural precision. The sculptural drape frames the torso with effortless grace, blending structure and softness." },
-  { id: 2, tag: "BOTTOMS", name: "Raw Indigo Straight Cut", image_url: "https://images.unsplash.com/photo-1542272604-780c8d52261d?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹3,200", sizes: ["28", "30", "32", "34", "36"], desc: "Selvedge denim washed in raw indigo. The straight cut sits cleanly on the hip and falls with a confident, unfussy line." },
-  { id: 3, tag: "BOTTOMS", name: "Canvas Pleat Trouser", image_url: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹2,950", sizes: ["S", "M", "L", "XL"], desc: "High-rise pleated trousers in medium-weight canvas. Italian-inspired silhouette with a tapered leg and deep side pockets." },
-  { id: 4, tag: "OUTERWEAR", name: "Structure Coat No. 04", image_url: "https://images.unsplash.com/photo-1539533113208-f6df8cc8b543?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹9,600", sizes: ["XS", "S", "M", "L", "XL"], desc: "A structured double-breasted coat in cardinal wool. The fourth in our annual coat series — bolder cut, wider lapels." },
-  { id: 5, tag: "TOPS", name: "Atelier Cotton Tee", image_url: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹1,400", sizes: ["XS", "S", "M", "L", "XL", "XXL"], desc: "Foundation-weight Supima cotton in a classic box silhouette. The invisible backbone of every capsule wardrobe." },
-  { id: 6, tag: "OUTERWEAR", name: "Plane Sweatshirt", image_url: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=400", model_url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", price: "₹3,600", sizes: ["S", "M", "L", "XL"], desc: "Heavyweight French terry in tonal mushroom. Garment-dyed for a lived-in finish that only improves with time." },
-];
+const PRODUCTS: any[] = [];
 
 const FILTERS = ["All", "Curated", "New", "Saved"];
 
@@ -528,10 +594,6 @@ export default function Page() {
                   </div>
                 }
               </>
-
-              /* ── Try-On Page ── */
-            ) : page === "Try-On" ? (
-              <TryOnPage />
 
               /* ── Find Page ── */
             ) : page === "Find" ? (

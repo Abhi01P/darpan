@@ -25,14 +25,7 @@ export function Sidebar({ category, page, detail, filter, wishlist, setCategory,
       ))}
 
       <div className="dw-sidebar-divider" />
-      <div className="dw-sidebar-section">Discover</div>
 
-      <div className={`dw-sidebar-item${page === "Try-On" ? " active" : ""}`} onClick={() => goPage("Try-On")}>
-        <Ico n="star" /> Try-On
-      </div>
-      <div className={`dw-sidebar-item${page === "Find" ? " active" : ""}`} onClick={() => goPage("Find")}>
-        <Ico n="search" /> Find
-      </div>
       <div
         className={`dw-sidebar-item${filter === "Saved" && page === "Wardrobe" ? " active" : ""}`}
         onClick={() => { setFilter("Saved"); setCategory("All"); goPage("Wardrobe"); }}
