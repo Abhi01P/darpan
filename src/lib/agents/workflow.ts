@@ -4,7 +4,7 @@
 // No LangGraph dependency; the routing is simple enough for a
 // sequential pipeline with conditional edges.
 
-import type { AgentState, PipelineResult, ChatHistoryMessage } from "./types";
+import type { PipelineResult, ChatHistoryMessage } from "./types";
 import { createInitialState } from "./types";
 import { runGatekeeper, routeGatekeeper } from "./gatekeeper";
 import { runStylist } from "./stylist";

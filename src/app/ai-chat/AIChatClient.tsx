@@ -140,13 +140,12 @@ function TryOnResult({ imageUrl, onAddToWardrobe, onNotHelpful }: {
               setWardrobeStatus("saved");
             }}
             disabled={wardrobeStatus !== "idle"}
-            className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase px-3 py-2.5 rounded-lg transition-all ${
-              wardrobeStatus === "saved"
+            className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase px-3 py-2.5 rounded-lg transition-all ${wardrobeStatus === "saved"
                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                 : wardrobeStatus === "saving"
-                ? "bg-white/5 text-white/30 border border-white/10 cursor-wait"
-                : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/30"
-            }`}
+                  ? "bg-white/5 text-white/30 border border-white/10 cursor-wait"
+                  : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/30"
+              }`}
           >
             {wardrobeStatus === "saved" ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
             {wardrobeStatus === "saved" ? "Added!" : wardrobeStatus === "saving" ? "Saving..." : "Add to Wardrobe"}
@@ -241,7 +240,6 @@ export default function AIChatClient({ initialGender, initialUserImageUrl }: { i
   const [isLoading, setIsLoading] = useState(false);
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
   const [userImageUrl, setUserImageUrl] = useState<string | null>(initialUserImageUrl || null);
-  const router = useRouter();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);

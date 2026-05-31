@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 // ─── Web Scraper ────────────────────────────────────────────
 // TypeScript port of DrapeNet's scraper.py
 // Product URL extraction + live retailer search + Google Lens
@@ -245,6 +246,7 @@ export async function extractProductInfo(
           if (data?.pdpData?.ratings?.averageRating) {
             extractedRating = data.pdpData.ratings.averageRating;
           }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) { }
       }
     }
