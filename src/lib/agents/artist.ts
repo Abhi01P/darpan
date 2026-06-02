@@ -245,6 +245,7 @@ export async function generateTryOn(
     stylingAdvice: "",
     tryOnTaskId: null,
     finalOutputUrl: null,
+    originalOutputUrl: null,
     currentAgent: "",
     error: null,
   };
