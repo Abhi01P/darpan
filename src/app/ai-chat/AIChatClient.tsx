@@ -104,8 +104,9 @@ function ProductCardDeck({ items, onTryOn }: { items: RecommendedItemData[]; onT
 
 // ─── Try-On Result Display ──────────────────────────────────
 
-function TryOnResult({ imageUrl, onAddToWardrobe, onNotHelpful }: {
+function TryOnResult({ imageUrl, originalUrl, onAddToWardrobe, onNotHelpful }: {
   imageUrl: string;
+  originalUrl?: string | null;
   onAddToWardrobe: (imageUrl: string) => void;
   onNotHelpful: (imageUrl: string) => void;
 }) {
@@ -136,15 +137,15 @@ function TryOnResult({ imageUrl, onAddToWardrobe, onNotHelpful }: {
           <button
             onClick={async () => {
               setWardrobeStatus("saving");
-              await onAddToWardrobe(imageUrl);
+              await onAddToWardrobe(originalUrl || imageUrl);
               setWardrobeStatus("saved");
             }}
             disabled={wardrobeStatus !== "idle"}
             className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase px-3 py-2.5 rounded-lg transition-all ${wardrobeStatus === "saved"
-                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                : wardrobeStatus === "saving"
-                  ? "bg-white/5 text-white/30 border border-white/10 cursor-wait"
-                  : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/30"
+              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+              : wardrobeStatus === "saving"
+                ? "bg-white/5 text-white/30 border border-white/10 cursor-wait"
+                : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/30"
               }`}
           >
             {wardrobeStatus === "saved" ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -204,7 +205,7 @@ function MessageBubble({ message, onTryOn, onAddToWardrobe, onNotHelpful }: {
         )}
 
         {!isUser && message.tryOnResultUrl && (
-          <TryOnResult imageUrl={message.tryOnResultUrl} onAddToWardrobe={onAddToWardrobe} onNotHelpful={onNotHelpful} />
+          <TryOnResult imageUrl={message.tryOnResultUrl} originalUrl={message.originalTryOnUrl} onAddToWardrobe={onAddToWardrobe} onNotHelpful={onNotHelpful} />
         )}
 
         <span className="text-[10px] text-white/20 mt-1.5 px-1">
@@ -303,6 +304,12 @@ export default function AIChatClient({ initialGender, initialUserImageUrl }: { i
       const data = await res.json();
       if (data.error) {
         console.warn("Failed to add to wardrobe:", data.error);
+        const msg: ChatMessage = {
+          id: generateId(), role: "assistant",
+          content: `❌ Failed to save: ${data.error}`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, msg]);
       } else {
         const msg: ChatMessage = {
           id: generateId(), role: "assistant",
@@ -311,8 +318,14 @@ export default function AIChatClient({ initialGender, initialUserImageUrl }: { i
         };
         setMessages((prev) => [...prev, msg]);
       }
-    } catch {
-      console.error("Failed to add to wardrobe");
+    } catch (error) {
+      console.error("Failed to add to wardrobe", error);
+      const msg: ChatMessage = {
+        id: generateId(), role: "assistant",
+        content: `❌ Network error while saving.`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, msg]);
     }
   };
 
@@ -379,6 +392,7 @@ export default function AIChatClient({ initialGender, initialUserImageUrl }: { i
         id: generateId(), role: "assistant", content: data.reply, timestamp: new Date(),
         recommendedItems: data.recommendedItems,
         tryOnResultUrl: data.tryOnResultUrl,
+        originalTryOnUrl: data.originalTryOnUrl,
         intentType: data.intentType,
         suggestedActions: data.suggestedActions,
       };

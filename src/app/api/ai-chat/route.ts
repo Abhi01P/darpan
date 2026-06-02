@@ -38,6 +38,7 @@ export async function POST(req: Request) {
       suggestedActions: response.suggestedActions || [],
       recommendedItems: response.recommendedItems || [],
       tryOnResultUrl: response.tryOnResultUrl || null,
+      originalTryOnUrl: response.originalTryOnUrl || null,
       intentType: response.intentType || null,
     } as ChatAPIResponse);
   } catch (error) {

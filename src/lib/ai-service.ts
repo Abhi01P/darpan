@@ -62,6 +62,7 @@ export async function processChat(
       imageUrl: item.imageUrl,
     })),
     tryOnResultUrl: pipelineResult.tryOnResultUrl,
+    originalTryOnUrl: pipelineResult.originalTryOnUrl || null,
     intentType: pipelineResult.intentType,
     suggestedActions,
   };

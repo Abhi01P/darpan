@@ -54,6 +54,7 @@ export async function runPipeline(
       intentType: null,
       recommendedItems: [],
       tryOnResultUrl: null,
+      originalTryOnUrl: null,
       error: state.error,
     };
   }
@@ -78,6 +79,7 @@ export async function runPipeline(
     intentType: state.intentType,
     recommendedItems: state.recommendedItems,
     tryOnResultUrl: state.finalOutputUrl,
+    originalTryOnUrl: state.originalOutputUrl,
     error: state.error,
   };
 }

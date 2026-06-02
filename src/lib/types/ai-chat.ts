@@ -20,6 +20,7 @@ export interface ChatMessage {
   suggestedActions?: SuggestedAction[];
   recommendedItems?: RecommendedItemData[];
   tryOnResultUrl?: string | null;
+  originalTryOnUrl?: string | null;
   intentType?: string | null;
 }
 
@@ -71,6 +72,7 @@ export interface AIResponse {
   suggestedActions?: SuggestedAction[];
   recommendedItems?: RecommendedItemData[];
   tryOnResultUrl?: string | null;
+  originalTryOnUrl?: string | null;
   intentType?: string | null;
 }
 
@@ -93,6 +95,7 @@ export interface ChatAPIResponse {
   suggestedActions?: SuggestedAction[];
   recommendedItems?: RecommendedItemData[];
   tryOnResultUrl?: string | null;
+  originalTryOnUrl?: string | null;
   intentType?: string | null;
   priceComparisons?: PriceComparison[];
   error?: string;

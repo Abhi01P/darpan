@@ -23,6 +23,12 @@ export async function POST(req: Request) {
     }
 
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
     let finalImageUrl = '';
     const bucketName = 'wardrobe-images';
 
@@ -84,6 +90,7 @@ export async function POST(req: Request) {
       desc,
       image_url: finalImageUrl,
       rating,
+      user_id: user.id,
     };
 
     const { data, error } = await supabase

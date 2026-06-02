@@ -25,6 +25,7 @@ export interface AgentState {
   // ─── Artist Outputs ──────────────────────────────────────
   tryOnTaskId: string | null;
   finalOutputUrl: string | null;
+  originalOutputUrl: string | null;
 
   // ─── Workflow Control ────────────────────────────────────
   currentAgent: string;
@@ -53,6 +54,7 @@ export interface PipelineResult {
   intentType: AgentState["intentType"];
   recommendedItems: RecommendedItem[];
   tryOnResultUrl: string | null;
+  originalTryOnUrl: string | null;
   error: string | null;
 }
 
@@ -75,6 +77,7 @@ export function createInitialState(
     stylingAdvice: "",
     tryOnTaskId: null,
     finalOutputUrl: null,
+    originalOutputUrl: null,
     currentAgent: "",
     error: null,
     ...overrides,

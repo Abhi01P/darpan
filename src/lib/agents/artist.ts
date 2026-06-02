@@ -1,56 +1,13 @@
 // ─── Artist Agent ───────────────────────────────────────────
-// TypeScript port of DrapeNet's artist.py + ml_pipeline.py
-// Virtual try-on via Gemini multimodal image generation.
-// Falls back to a side-by-side preview mock when no API key.
+// TypeScript port to call DrapeNet's backend API.
+// Virtual try-on via DrapeNet's /api/v1/try-on/process endpoint.
+// Falls back to a side-by-side preview mock on error.
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { AgentState } from "./types";
-
-// Use the public SDK's image generation model
-// (Python uses gemini-2.5-flash-image via Vertex AI — this is the equivalent
-// available via the @google/generative-ai SDK with an API key)
-const TRYON_MODEL = "gemini-2.0-flash-preview-image-generation";
-
-function hasGeminiKey(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY);
-}
-
-/**
- * Downloads an image from a URL and returns it as a base64 string
- * along with its MIME type.
- */
-async function downloadImageAsBase64(
-  url: string
-): Promise<{ base64: string; mimeType: string }> {
-  // If it's already a Data URI, parse it directly to avoid fetch overhead
-  if (url.startsWith("data:")) {
-    const matches = url.match(/^data:([^;]+);base64,(.+)$/);
-    if (matches && matches.length === 3) {
-      return { mimeType: matches[1], base64: matches[2] };
-    }
-  }
-
-  const response = await fetch(url, {
-    signal: AbortSignal.timeout(15000),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to download image: HTTP ${response.status}`);
-  }
-
-  const contentType = response.headers.get("content-type") || "image/jpeg";
-  const buffer = await response.arrayBuffer();
-  const base64 = Buffer.from(buffer).toString("base64");
-
-  return {
-    base64,
-    mimeType: contentType.split(";")[0].trim(),
-  };
-}
 
 /**
  * Generates a mock try-on preview: an SVG showing the garment image
- * with a "Virtual Try-On Preview" overlay. No API key needed.
+ * with a "Virtual Try-On Preview" overlay.
  */
 function generateMockTryOn(garmentImageUrl: string): string {
   const svg = `
@@ -72,121 +29,192 @@ function generateMockTryOn(garmentImageUrl: string): string {
   <rect x="56" y="460" width="400" height="80" rx="0" fill="rgba(0,0,0,0.6)"/>
   <text x="256" y="508" text-anchor="middle" fill="#e8dce0" font-family="sans-serif" font-size="16" font-weight="600" letter-spacing="2">✨ VIRTUAL TRY-ON PREVIEW</text>
   <rect x="0" y="580" width="512" height="100" fill="rgba(0,0,0,0.4)"/>
-  <text x="256" y="620" text-anchor="middle" fill="#c4a7d4" font-family="sans-serif" font-size="12" letter-spacing="1" opacity="0.8">DEMO MODE — No API key configured</text>
-  <text x="256" y="648" text-anchor="middle" fill="#8a7a82" font-family="sans-serif" font-size="11" opacity="0.6">Add GEMINI_API_KEY for AI-powered try-on</text>
+  <text x="256" y="620" text-anchor="middle" fill="#c4a7d4" font-family="sans-serif" font-size="12" letter-spacing="1" opacity="0.8">DEMO MODE — Fallback preview</text>
+  <text x="256" y="648" text-anchor="middle" fill="#8a7a82" font-family="sans-serif" font-size="11" opacity="0.6">Check DrapeNet API connection</text>
 </svg>`.trim();
 
   const base64 = Buffer.from(svg).toString("base64");
   return `data:image/svg+xml;base64,${base64}`;
 }
 
-/**
- * Artist Agent — the pipeline's hands.
- *
- * When GEMINI_API_KEY is set: Uses Gemini's multimodal image generation
- * with responseModalities: ["IMAGE", "TEXT"] to generate virtual try-on.
- * When not set: Returns a styled garment preview SVG (no AI generation).
- */
+function base64ToBlob(base64DataUri: string): Blob {
+  const matches = base64DataUri.match(/^data:([^;]+);base64,(.+)$/);
+  if (!matches) throw new Error("Invalid base64 image data");
+  const mimeType = matches[1];
+  const base64Data = matches[2];
+  const buffer = Buffer.from(base64Data, "base64");
+  return new Blob([buffer], { type: mimeType });
+}
+
 export async function runArtist(state: AgentState): Promise<AgentState> {
-  console.log("[Artist] Initiating 2D Virtual Try-On");
+  console.log("[Artist] Initiating Virtual Try-On via DrapeNet API");
 
   const userImage = state.userImageUrl;
   const garmentImage = state.garmentImageUrl;
 
-  if (!userImage || !garmentImage) {
+  if (!userImage || (!garmentImage && !state.garmentPageUrl)) {
     console.log("[Artist] Missing images, skipping try-on generation");
     state.currentAgent = "artist";
     return state;
   }
 
-  // ── Mock Mode ──────────────────────────────────────────
-  if (!hasGeminiKey()) {
-    console.log("[Artist] No API key — generating mock preview");
-    state.finalOutputUrl = generateMockTryOn(garmentImage);
-    state.tryOnTaskId = `mock_${Date.now().toString(36)}`;
-    state.currentAgent = "artist";
-    return state;
-  }
+  const backendUrl = process.env.DRAPENET_BACKEND_URL;
 
-  // ── Gemini Mode ────────────────────────────────────────
   try {
-    const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genai.getGenerativeModel({
-      model: TRYON_MODEL,
-      // Request image output from the model — matches Python's
-      // config=types.GenerateContentConfig(response_modalities=["IMAGE"])
-      // The SDK types don't include responseModalities yet, so we cast.
-      generationConfig: {
-        responseModalities: ["IMAGE", "TEXT"],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
+    const headers: Record<string, string> = {
+      "ngrok-skip-browser-warning": "true",
+    };
+    if (process.env.DRAPENET_EMAIL) headers["email"] = process.env.DRAPENET_EMAIL;
+    if (process.env.DRAPENET_PASSWORD) headers["password"] = process.env.DRAPENET_PASSWORD;
+
+    // STEP 1: Upload the user image to the backend to get a public URL
+    console.log(`[Artist] Uploading user image to DrapeNet via process-images...`);
+    const formData = new FormData();
+
+    if (userImage.startsWith("data:")) {
+      formData.append("user_image", base64ToBlob(userImage), "user_image.jpg");
+    } else {
+      throw new Error("User image must be a base64 upload.");
+    }
+
+    if (garmentImage) {
+      if (garmentImage.startsWith("data:")) {
+        formData.append("garment_image", base64ToBlob(garmentImage), "garment_image.jpg");
+      } else {
+        formData.append("garment_image_url", garmentImage);
+      }
+    }
+
+    const uploadRes = await fetch(`${backendUrl}/api/v1/try-on/process-images`, {
+      method: "POST",
+      headers,
+      body: formData,
     });
 
-    console.log("[Artist] Downloading source images...");
-    const [personData, garmentData] = await Promise.all([
-      downloadImageAsBase64(userImage),
-      downloadImageAsBase64(garmentImage),
-    ]);
-
-    // The critical identity-preservation prompt from DrapeNet's ml_pipeline.py
-    const prompt = `You are an expert digital fashion editor. Look at the person in the first image, and look at the clothing item in the second image.
-
-Seamlessly change the outfit of the person in the first image so they are wearing the exact garment from the second image.
-
-CRITICAL INSTRUCTION: You absolutely MUST preserve the exact face, facial features, hair, and identity of the person in the first image. DO NOT alter their face in any way.
-
-Only change the clothing. Ensure the lighting and body pose remain perfectly consistent.
-
-Generate a single photorealistic result image.`;
-
-    console.log(`[Artist] Calling ${TRYON_MODEL} for virtual try-on...`);
-
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          data: personData.base64,
-          mimeType: personData.mimeType,
-        },
-      },
-      {
-        inlineData: {
-          data: garmentData.base64,
-          mimeType: garmentData.mimeType,
-        },
-      },
-      prompt,
-    ]);
-
-    const response = result.response;
-    const parts = response.candidates?.[0]?.content?.parts;
-
-    if (!parts || parts.length === 0) {
-      throw new Error("Gemini API returned no content.");
+    if (!uploadRes.ok) {
+      const errData = await uploadRes.text();
+      throw new Error(`DrapeNet upload error: ${uploadRes.status} - ${errData}`);
     }
 
-    // Look for inline image data in the response
-    const imagePart = parts.find(
-      (part) => part.inlineData?.data
-    );
+    const uploadData = await uploadRes.json();
+    const uploadedUserImageUrl = uploadData.result_image_url;
 
-    if (imagePart?.inlineData) {
-      const mimeType = imagePart.inlineData.mimeType || "image/png";
-      const base64Data = imagePart.inlineData.data;
-      state.finalOutputUrl = `data:${mimeType};base64,${base64Data}`;
-      state.tryOnTaskId = `tryon_${Date.now().toString(36)}`;
-      console.log("[Artist] Virtual try-on generation successful!");
-    } else {
-      // Gemini returned text instead of image — fall back to mock
-      console.warn("[Artist] Gemini did not return an image, using mock preview");
-      state.finalOutputUrl = generateMockTryOn(garmentImage);
-      state.tryOnTaskId = `mock_${Date.now().toString(36)}`;
+    if (!uploadedUserImageUrl) {
+      throw new Error(`Failed to get hosted image URL. Response: ${JSON.stringify(uploadData)}`);
     }
+
+    // STEP 2: Trigger the actual agent graph using the newly hosted URL
+    console.log(`[Artist] Triggering main Try-On agent graph...`);
+    const userQuery = state.chatHistory.length > 0
+      ? state.chatHistory[state.chatHistory.length - 1].content
+      : null;
+
+    const jsonHeaders = {
+      ...headers,
+      "Content-Type": "application/json",
+    };
+
+    const processRes = await fetch(`${backendUrl}/api/v1/try-on/process`, {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({
+        user_image_url: uploadedUserImageUrl,
+        garment_image_url: garmentImage && !garmentImage.startsWith("data:") ? garmentImage : null,
+        garment_page_url: state.garmentPageUrl || null,
+        user_query: userQuery,
+        user_gender: state.userGender || null,
+        chat_history: state.chatHistory || [],
+        disliked_items: state.dislikedItems || [],
+      }),
+    });
+
+    if (!processRes.ok) {
+      const errData = await processRes.text();
+      throw new Error(`DrapeNet process API error: ${processRes.status} - ${errData}`);
+    }
+
+    const processData = await processRes.json();
+    const taskId = processData.tryon_task_id;
+
+    if (!taskId) {
+      throw new Error(`No task ID returned from DrapeNet API. Response: ${JSON.stringify(processData)}`);
+    }
+
+    state.tryOnTaskId = taskId;
+    if (processData.styling_advice) state.stylingAdvice = processData.styling_advice;
+    if (processData.recommended_garment_id) state.recommendedGarmentId = processData.recommended_garment_id;
+    if (processData.extracted_garment_title) state.garmentTitle = processData.extracted_garment_title;
+    if (processData.recommended_items) state.recommendedItems = processData.recommended_items;
+
+    console.log(`[Artist] Task initiated: ${taskId}. Polling for results...`);
+
+    // STEP 3: Poll for results
+    let maxRetries = 30; // 60 seconds max
+    let isComplete = false;
+
+    while (maxRetries > 0 && !isComplete) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const statusRes = await fetch(`${backendUrl}/api/v1/try-on/tasks/${taskId}`, {
+        headers,
+      });
+      if (!statusRes.ok) {
+        console.warn(`[Artist] Polling error: ${statusRes.status}`);
+        maxRetries--;
+        continue;
+      }
+
+      const statusData = await statusRes.json();
+
+      if (statusData.status === "SUCCESS") {
+        const finalUrl = statusData.result?.result_image_url;
+        if (finalUrl) {
+          try {
+            console.log(`[Artist] Fetching final image to bypass ngrok browser warning...`);
+            const imgRes = await fetch(finalUrl, {
+              headers: { "ngrok-skip-browser-warning": "true" }
+            });
+            if (imgRes.ok) {
+              const arrayBuffer = await imgRes.arrayBuffer();
+              const buffer = Buffer.from(arrayBuffer);
+              const base64 = buffer.toString("base64");
+              const contentType = imgRes.headers.get("content-type") || "image/jpeg";
+              state.finalOutputUrl = `data:${contentType};base64,${base64}`;
+              state.originalOutputUrl = finalUrl;
+            } else {
+              console.warn(`[Artist] Failed to fetch image, falling back to URL.`);
+              state.finalOutputUrl = finalUrl;
+              state.originalOutputUrl = finalUrl;
+            }
+          } catch (err) {
+            console.warn(`[Artist] Error converting image to base64, falling back to URL:`, err);
+            state.finalOutputUrl = finalUrl;
+            state.originalOutputUrl = finalUrl;
+          }
+        } else {
+          state.finalOutputUrl = null;
+          state.originalOutputUrl = null;
+        }
+
+        console.log("[Artist] Virtual try-on generation successful!");
+        isComplete = true;
+      } else if (statusData.status === "FAILURE") {
+        throw new Error("Try-on task failed on the backend.");
+      }
+
+      maxRetries--;
+    }
+
+    if (!isComplete) {
+      throw new Error("Try-on task timed out.");
+    }
+
   } catch (error) {
     console.error(`[Artist] Error during try-on: ${error}`);
-    // Fall back to mock on any error
+    state.error = error instanceof Error ? error.message : "Unknown error";
+
     console.log("[Artist] Falling back to mock preview");
-    state.finalOutputUrl = generateMockTryOn(garmentImage);
-    state.tryOnTaskId = `mock_${Date.now().toString(36)}`;
+    state.finalOutputUrl = generateMockTryOn(garmentImage || "");
   }
 
   state.currentAgent = "artist";

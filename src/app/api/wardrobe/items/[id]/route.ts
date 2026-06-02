@@ -15,6 +15,14 @@ export async function DELETE(
     }
 
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
 
     // 1. Fetch item to get the image_url
     const { data: itemData, error: fetchError } = await supabase
