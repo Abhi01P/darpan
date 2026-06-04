@@ -45,11 +45,13 @@ export async function POST(req: Request) {
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
+        const { data: signedData, error: signedError } = await supabase.storage
           .from(bucketName)
-          .getPublicUrl(fileName);
+          .createSignedUrl(fileName, 3600);
 
-        finalImageUrl = publicUrl;
+        if (!signedError && signedData) {
+          finalImageUrl = signedData.signedUrl;
+        }
       } else if (providedImageUrl) {
         // Fetch URL and upload
         const imgResponse = await fetch(providedImageUrl);
@@ -69,11 +71,13 @@ export async function POST(req: Request) {
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
+        const { data: signedData, error: signedError } = await supabase.storage
           .from(bucketName)
-          .getPublicUrl(fileName);
+          .createSignedUrl(fileName, 3600);
 
-        finalImageUrl = publicUrl;
+        if (!signedError && signedData) {
+          finalImageUrl = signedData.signedUrl;
+        }
       }
     } catch (uploadErr) {
       console.error("Image upload failed:", uploadErr);

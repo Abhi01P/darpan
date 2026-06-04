@@ -27,6 +27,27 @@ export async function GET() {
       );
     }
 
+    // Refresh signed URLs for items stored in the bucket
+    if (items) {
+      for (const item of items) {
+        if (item.image_url && item.image_url.includes('wardrobe-images')) {
+          const urlParts = item.image_url.split('/');
+          let fileName = urlParts.pop();
+          if (fileName) {
+            // Strip any existing query parameters (like previous signed URL tokens)
+            fileName = fileName.split('?')[0];
+            const { data: signedData } = await supabase.storage
+              .from('wardrobe-images')
+              .createSignedUrl(fileName, 3600);
+            
+            if (signedData?.signedUrl) {
+              item.image_url = signedData.signedUrl;
+            }
+          }
+        }
+      }
+    }
+
     return NextResponse.json({ items });
   } catch (error) {
     console.error("Error in GET /api/wardrobe/items:", error);

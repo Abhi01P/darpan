@@ -49,8 +49,10 @@ export async function POST(req: Request) {
         if (uploadError) {
           console.warn("[Wardrobe Add] Storage upload failed, using inline URL:", uploadError);
         } else {
-          const { data: { publicUrl } } = supabase.storage.from("wardrobe-images").getPublicUrl(uploadData.path);
-          finalImageUrl = publicUrl;
+          const { data: signedData, error: signedError } = await supabase.storage.from("wardrobe-images").createSignedUrl(uploadData.path, 3600);
+          if (!signedError && signedData) {
+            finalImageUrl = signedData.signedUrl;
+          }
         }
       }
     } else if (imageUrl.startsWith("http")) {
@@ -76,8 +78,10 @@ export async function POST(req: Request) {
           if (uploadError) {
             console.warn("[Wardrobe Add] HTTP image upload failed, using original URL:", uploadError);
           } else {
-            const { data: { publicUrl } } = supabase.storage.from("wardrobe-images").getPublicUrl(uploadData.path);
-            finalImageUrl = publicUrl;
+            const { data: signedData, error: signedError } = await supabase.storage.from("wardrobe-images").createSignedUrl(uploadData.path, 3600);
+            if (!signedError && signedData) {
+              finalImageUrl = signedData.signedUrl;
+            }
           }
         }
       } catch (fetchErr) {
