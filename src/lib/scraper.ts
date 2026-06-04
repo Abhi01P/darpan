@@ -23,6 +23,7 @@ async function fetchWithRetry(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await fetch(url, {
+        cache: "no-store",
         ...options,
         signal: options.signal || AbortSignal.timeout(15000),
       });
@@ -237,6 +238,9 @@ export async function extractProductInfo(
         let endIndex = dataStr.indexOf("};");
         if (endIndex > -1) {
           dataStr = dataStr.substring(0, endIndex + 1);
+        } else {
+          dataStr = dataStr.trim();
+          if (dataStr.endsWith(";")) dataStr = dataStr.slice(0, -1);
         }
         try {
           const data = JSON.parse(dataStr);
@@ -402,6 +406,9 @@ async function searchMyntra(query: string): Promise<RecommendedItem[]> {
     let endIndex = dataStr.indexOf("};");
     if (endIndex > -1) {
       dataStr = dataStr.substring(0, endIndex + 1);
+    } else {
+      dataStr = dataStr.trim();
+      if (dataStr.endsWith(";")) dataStr = dataStr.slice(0, -1);
     }
 
     let data: {
