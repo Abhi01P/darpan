@@ -28,8 +28,8 @@ async function fetchWithRetry(
         signal: options.signal || AbortSignal.timeout(15000),
       });
 
-      // Retry on server errors (5xx) and Rate Limits (429)
-      if (response.status >= 500 || response.status === 429) {
+      // Retry on server errors (5xx), but not client errors (4xx)
+      if (response.status >= 500) {
         lastError = new Error(`Server error: HTTP ${response.status}`);
         if (attempt < maxRetries - 1) {
           const delay = baseDelayMs * Math.pow(2, attempt);
@@ -56,50 +56,6 @@ async function fetchWithRetry(
   }
 
   throw lastError || new Error("All retry attempts failed");
-}
-
-// ─── Robust JSON Extractor ──────────────────────────────────
-/**
- * Safely extracts a JSON object from a string starting with '{'
- * by keeping track of balanced braces, ignoring braces inside strings.
- */
-function extractValidJSON(str: string): string | null {
-  let depth = 0;
-  let inString = false;
-  let escapeNext = false;
-  let startIndex = -1;
-
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i];
-    
-    if (escapeNext) {
-      escapeNext = false;
-      continue;
-    }
-    
-    if (char === '\\') {
-      escapeNext = true;
-      continue;
-    }
-    
-    if (char === '"') {
-      inString = !inString;
-      continue;
-    }
-    
-    if (!inString) {
-      if (char === '{') {
-        if (depth === 0) startIndex = i;
-        depth++;
-      } else if (char === '}') {
-        depth--;
-        if (depth === 0 && startIndex !== -1) {
-          return str.substring(startIndex, i + 1);
-        }
-      }
-    }
-  }
-  return null;
 }
 
 // ─── Google Lens Reverse Image Search ───────────────────────
@@ -279,20 +235,23 @@ export async function extractProductInfo(
         let scriptContent = scriptMatch[1];
         let startIndex = scriptContent.indexOf("window.__myx = ") + "window.__myx = ".length;
         let dataStr = scriptContent.substring(startIndex);
-        let validJsonStr = extractValidJSON(dataStr);
-        
-        if (validJsonStr) {
-          try {
-            const data = JSON.parse(validJsonStr);
-            if (data?.pdpData?.price?.mrp) {
-              extractedPrice = data.pdpData.price.discounted || data.pdpData.price.mrp;
-            }
-            if (data?.pdpData?.ratings?.averageRating) {
-              extractedRating = data.pdpData.ratings.averageRating;
-            }
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          } catch (e) { }
+        let endIndex = dataStr.indexOf("};");
+        if (endIndex > -1) {
+          dataStr = dataStr.substring(0, endIndex + 1);
+        } else {
+          dataStr = dataStr.trim();
+          if (dataStr.endsWith(";")) dataStr = dataStr.slice(0, -1);
         }
+        try {
+          const data = JSON.parse(dataStr);
+          if (data?.pdpData?.price?.mrp) {
+            extractedPrice = data.pdpData.price.discounted || data.pdpData.price.mrp;
+          }
+          if (data?.pdpData?.ratings?.averageRating) {
+            extractedRating = data.pdpData.ratings.averageRating;
+          }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (e) { }
       }
     }
 
@@ -444,11 +403,12 @@ async function searchMyntra(query: string): Promise<RecommendedItem[]> {
     let scriptContent = scriptMatch[1];
     let startIndex = scriptContent.indexOf("window.__myx = ") + "window.__myx = ".length;
     let dataStr = scriptContent.substring(startIndex);
-    let validJsonStr = extractValidJSON(dataStr);
-
-    if (!validJsonStr) {
-      console.warn("[Scraper] Myntra: Failed to extract valid JSON string");
-      return [];
+    let endIndex = dataStr.indexOf("};");
+    if (endIndex > -1) {
+      dataStr = dataStr.substring(0, endIndex + 1);
+    } else {
+      dataStr = dataStr.trim();
+      if (dataStr.endsWith(";")) dataStr = dataStr.slice(0, -1);
     }
 
     let data: {
@@ -466,7 +426,7 @@ async function searchMyntra(query: string): Promise<RecommendedItem[]> {
       };
     };
     try {
-      data = JSON.parse(validJsonStr);
+      data = JSON.parse(dataStr);
     } catch {
       console.warn("[Scraper] Myntra: Failed to parse product JSON");
       return [];
