@@ -73,7 +73,7 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
         // For URL mode, pass the image URL as a special field
         formData.append("imageUrl", urlPreview.imageUrl);
         if (urlPreview.rating) {
-            formData.append("rating", urlPreview.rating);
+          formData.append("rating", urlPreview.rating);
         }
 
         const response = await fetch('/api/wardrobe/generate', {
@@ -82,8 +82,8 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
         });
 
         if (!response.ok) {
-           const errData = await response.json().catch(() => null);
-           throw new Error(errData?.error || "Failed to add item");
+          const errData = await response.json().catch(() => null);
+          throw new Error(errData?.error || "Failed to add item");
         }
         const result = await response.json();
 
@@ -132,18 +132,14 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
         sourceFiles.forEach((file) => {
           formData.append("images", file);
         });
-
-        await new Promise(r => setTimeout(r, 800));
-        setLoadingStatus("Generating 3D model via Meshy AI...");
-
         const response = await fetch('/api/wardrobe/generate', {
           method: 'POST',
           body: formData,
         });
 
         if (!response.ok) {
-           const errData = await response.json().catch(() => null);
-           throw new Error(errData?.error || "Failed to generate model");
+          const errData = await response.json().catch(() => null);
+          throw new Error(errData?.error || "Failed to generate model");
         }
 
         setLoadingStatus("Finalizing...");
@@ -426,7 +422,7 @@ export function UploadModal({ isOpen, onClose, onUpload }) {
                 <span className="spinner" style={{ width: 14, height: 14, border: "2px solid var(--nav-bg)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }}></span>
                 {loadingStatus}
               </>
-            ) : inputMode === "link" ? "Add to Wardrobe" : "Generate 3D & Upload"}
+            ) : "Add to Wardrobe"}
           </button>
         </form>
         <style>{`

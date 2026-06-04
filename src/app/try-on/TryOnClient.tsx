@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Navbar from "@/components/wardrobe/Navbar";
 import "@/styles/darpan-nav.css";
@@ -20,6 +20,21 @@ export default function TryOnClient() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isAROpen, setIsAROpen] = useState(false);
   const [wardrobeStatus, setWardrobeStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const garmentImageParam = params.get('garmentImage');
+    if (garmentImageParam) {
+      setInputType("upload");
+      fetch(garmentImageParam)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], "wardrobe_garment.jpg", { type: blob.type || "image/jpeg" });
+          setImageFile(file);
+        })
+        .catch(err => console.error("Failed to load garment image:", err));
+    }
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) setImageFile(e.target.files[0]);

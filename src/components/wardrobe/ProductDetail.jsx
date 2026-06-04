@@ -1,14 +1,8 @@
 import { useState } from "react";
 import { Ico } from "@/components/wardrobe/shared";
-import dynamic from "next/dynamic";
-
-const ModelViewerComponent = dynamic(() => import("@/components/wardrobe/ModelViewer"), { ssr: false });
-const WearableAR = dynamic(() => import("@/components/wardrobe/WearableAR"), { ssr: false });
 
 export function ProductDetail({ product, wishlist, onWishlist, onAddBag, onBack }) {
   const [size, setSize] = useState(null);
-  const [is3DOpen, setIs3DOpen] = useState(false);
-  const [isAROpen, setIsAROpen] = useState(false);
   const liked = wishlist.some(w => w.id === product.id);
   return (
     <div>
@@ -49,37 +43,19 @@ export function ProductDetail({ product, wishlist, onWishlist, onAddBag, onBack 
           <div className="dw-detail-actions" style={{ display: 'flex', gap: 12 }}>
             <button 
               className="dw-btn-primary" 
-              onClick={() => setIsAROpen(true)}
-              disabled={!product.model_url}
-              style={{ flex: 1, opacity: product.model_url ? 1 : 0.5 }}
+              onClick={() => {
+                if (product.image_url) {
+                  window.location.href = `/try-on?garmentImage=${encodeURIComponent(product.image_url)}`;
+                }
+              }}
+              disabled={!product.image_url}
+              style={{ flex: 1, opacity: product.image_url ? 1 : 0.5 }}
             >
-              Real-Time AR
-            </button>
-            <button 
-              className="dw-btn-secondary" 
-              onClick={() => setIs3DOpen(true)}
-              disabled={!product.model_url}
-              style={{ flex: 1, opacity: product.model_url ? 1 : 0.5, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.05)' }}
-            >
-              3D Viewer
+              2D Try On
             </button>
           </div>
         </div>
       </div>
-
-      {is3DOpen && (
-        <ModelViewerComponent 
-          modelUrl={product.model_url} 
-          onClose={() => setIs3DOpen(false)} 
-        />
-      )}
-      
-      {isAROpen && (
-        <WearableAR 
-          modelUrl={product.model_url} 
-          onClose={() => setIsAROpen(false)} 
-        />
-      )}
     </div>
   );
 }

@@ -3,16 +3,35 @@
 import { User } from "@supabase/supabase-js";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 interface ProfileClientProps {
   user: User;
 }
 
 export default function ProfileClient({ user }: ProfileClientProps) {
+  const router = useRouter();
+  const supabase = createClient();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
   // In a real application, you would fetch these from your database
   // For now, we'll use local state to mock the presence of 2D/3D replicas
   const [has2DImage, setHas2DImage] = useState(false);
   const [has3DReplica, setHas3DReplica] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      await supabase.auth.signOut();
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <div className="flex-1 w-full max-w-6xl mx-auto p-6 md:p-12">
@@ -52,14 +71,13 @@ export default function ProfileClient({ user }: ProfileClientProps) {
             </div>
 
             <div className="mt-8 pt-6 border-t border-white/10">
-              <form action="/auth/signout" method="post">
-                <button
-                  type="submit"
-                  className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors border border-white/20"
-                >
-                  Sign Out
-                </button>
-              </form>
+              <button
+                onClick={handleSignOut}
+                disabled={isSigningOut}
+                className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors border border-white/20 disabled:opacity-50"
+              >
+                {isSigningOut ? "Signing Out..." : "Sign Out"}
+              </button>
             </div>
           </div>
         </div>
